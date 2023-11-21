@@ -11,19 +11,19 @@ The changes that are monitored can either be forwarded to a slack webhook or out
 ## Features
 
 1.  **Real-time Monitoring:** LDAP Stalker continuously monitors an LDAP directory for changes in user and group entries.
-    
+
 2.  **Change Comparison:** The tool compares changes between consecutive LDAP searches, highlighting additions, modifications, and deletions.
-    
+
 3.  **Control User Verification:** LDAP Stalker supports a control user mechanism, triggering an error if the control user's changes are not found.
-    
+
 4.  **Flexible LDAP Filtering:** Users can customize LDAP filtering using the `SEARCH_FILTER` parameter to focus on specific object classes or attributes.
-    
+
 5.  **Slack Integration:** Receive real-time notifications on Slack for added, modified, or deleted LDAP entries.
-    
+
 6.  **Customizable Output:** Console output provides clear and colored indications of additions, modifications, and deletions for easy visibility.
-    
+
 7.  **Ignored Entries and Attributes:** Users can specify UUIDs and attributes to be ignored during the comparison process.
-    
+
 8.  **Conditional Ignored Attributes:** Conditional filtering allows users to ignore specific attributes based on change type (additions, modifications, deletions).
 
 
@@ -36,7 +36,7 @@ The changes that are monitored can either be forwarded to a slack webhook or out
 ## Configuration
 
 ### General Settings
-- `CONTROL_UUID`: UUID of a control user whose changes trigger an error if not found. If set, this user should always have some type of change when the LDAP directory is retrieved. At least one attribute must have changed.
+- `CONTROL_UUID`: UUID of a control user's UUID whose changes trigger an error if not found. If set, this user should always have some type of change when the LDAP directory is retrieved. At least one attribute must have changed.
 - `CONTROL_USER_ATTRIBUTE`: Specify a specific attribute to check for changes in the control user. If set, this attribute _must_ have changed for the _CONTROL_UUID_ user.
 - `LDAP_SERVER`: LDAP server URL.
 - `BASE_DN`: The base Distinguished Name for LDAP searches.
