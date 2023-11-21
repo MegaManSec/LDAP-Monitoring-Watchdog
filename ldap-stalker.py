@@ -328,11 +328,10 @@ def compare_ldap_entries(old_entries, new_entries):
 if __name__ == '__main__':
     new_entries = retrieve_ldap()
     while True:
+        time.sleep(REFRESH_RATE)
         old_entries = new_entries
         retrieved_entries = retrieve_ldap()
         if len(retrieved_entries) == 0:
             continue
         new_entries = retrieved_entries
         compare_ldap_entries(old_entries, new_entries)
-        time.sleep(REFRESH_RATE)
-
