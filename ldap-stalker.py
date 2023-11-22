@@ -260,69 +260,87 @@ def compare_ldap_entries(old_entries, new_entries):
         if uuid in IGNORED_UUIDS:
             continue  # TODO: print that it was skipped?
         if old_entries[uuid] != new_entries[uuid]:
+            # For changes of a user, there are three types of operations to define: additions, removals, and modifications.
             changes = {}
-            changes.setdefault("additions", [])
-            changes.setdefault("modifications", [])
-            changes.setdefault("removals", [])
+            # XXX: Could these be dictionaries instead?
+            changes.setdefault("additions", []) # A list of addition of values to attributes.
+            changes.setdefault("modifications", []) # A list of changes of a single value for an attribute.
+            changes.setdefault("removals", []) # A list of removal of values from an atttribute.
             for key in old_entries[uuid].keys() | new_entries[uuid].keys():
-                val1 = old_entries[uuid].get(key)
-                val2 = new_entries[uuid].get(key)
-                if val1 != val2:
-                    if val1 is None:
-                        changes["additions"].append({key: val2})
-                    elif val2 is None:
-                        changes["removals"].append({key: val1})
+                # Compare each key (attribute) in the old and new entries
+                old_value = old_entries[uuid].get(key)
+                new_value = new_entries[uuid].get(key)
+                # If they are not the same, we have some type of change.
+                if old_value != new_value:
+                    if old_value is None:
+                        # If the key is not found in old_entries, it's an addition.
+                        changes["additions"].append({key: new_value})
+                    elif new_value is None:
+                        # If the key is not found in new_entries, it's a removal.
+                        changes["removals"].append({key: old_value})
                     else:
-                        if len(val1) == len(val2) == 1:  # if the attribute has only one value, it is probably a modification.
-                            changes["modifications"].append({key: (val1[0], val2[0])})
+                        # If the key is in both old_entries and new_entries but the values are not the same, then may be a modification.
+                        # There is no way to truly determine whether an attribute's value(s) have been changed, or removed and then a new value added.
+                        # Therefore, we define a modification as the change of an attribute that has only a single value.
+                        if len(old_value) == len(new_value) == 1:
+                            changes["modifications"].append({key: (old_value[0], new_value[0])})
                         else:
-                            added = set(val2) - set(val1)
-                            removed = set(val1) - set(val2)
+                            # If there is either zero or more than one value for an attribute, then the difference beteen the old values and the new values indicate an addition or removal (or a value; not an entry).
+                            # That is to say: this is the addition or removal of values for an attribute which does not have exactly one old value and exactly one new value.
+                            # Therefore, if a new value (or values) is present for an attribute, it is also an addition.
+                            added = set(new_value) - set(old_value)
+                            # And if the value (or values) is only in the old data, it is a removal.
+                            removed = set(old_value) - set(new_value)
                             if added:
                                 changes["additions"].append({key: added})
                             if removed:
                                 changes["removals"].append({key: removed})
 
-            for change_type in ["additions", "modifications", "removals"]:
-                for attr_name in IGNORED_ATTRIBUTES:
-                    for each in changes[change_type]:
-                        if attr_name in each:
-                            print(f"Ignoring {old_entries[uuid]['dn'][0]} ({old_entries[uuid]['entryUUID'][0]}) {each}", file=sys.stderr)
-                            while each in changes[change_type]:
-                                changes[change_type].remove(each)
+            # It is worth remembering what "changes" really is.
+
+            # changes["modifications"] is a set of dictionaries. Each dictionary's key is an attribute name, and the value is a tuple of (old_ldap_value, new_ldap_value).
+            # changes["modifications"] =
+            # [
+            #   { attr_name: (old_val, new_val) },
+            #   { attr_name2: (old_val2, new_val2) },
+            # ]
+            #
+            # changes["additions"] and changes["removals"] are each a set of dictionaries. Each dictionary's key is an attribute name, and the value is a set of the values for which we wish to ignore.
+            # changes["additions"] =
+            # [
+            #  { attr_name: [val1, val2] },
+            #  { attr_name2: [val1, val2] },
+            # ]
 
             for change_type in ["additions", "modifications", "removals"]:
-                for attr_name, ignored_attrs in CONDITIONAL_IGNORED_ATTRIBUTES.items():
-                    i = 0
-                    while i < len(changes[change_type]):
-                        each = changes[change_type][i]
-                        if attr_name in each:
-                            if change_type == "modifications":
-                                old_attr_value = each[attr_name][0]
-                                new_attr_value = each[attr_name][1]
-                                if old_attr_value in ignored_attrs or new_attr_value in ignored_attrs:
-                                    print(f"Ignoring {change_type} of {old_entries[uuid]['dn'][0]} ({old_entries[uuid]['entryUUID'][0]}) {attr_name}: from {old_attr_value} to {new_attr_value}", file=sys.stderr)
-                                    changes[change_type].pop(i)
-                                    continue
+                for ignored_attr_name in IGNORED_ATTRIBUTES:
+                    for change in changes[change_type][:]:  # Using a shallow copy of each dictionary.
+                        # For each change type, check whether any of the changed attribute names should be ignored.
+                        if ignored_attr_name in change:
+                            print(f"Ignoring {old_entries[uuid]['dn'][0]} ({old_entries[uuid]['entryUUID'][0]}) {change}", file=sys.stderr)
+                            changes[change_type].remove(change)
+
+            for change_type in ["additions", "modifications", "removals"]:
+                for ignored_attr_name, ignored_attr_list in CONDITIONAL_IGNORED_ATTRIBUTES.items():
+                    for change in changes[change_type][:]: # 'change' is each dictionary in changes.
+                        if ignored_attr_name in change: # Check if the attribute name is ignored.
+                            if change_type == "modifications": # For modifications, we ignore the change if either the new or old value of the ignored attribute is the ignored value.
+                                old_attr_value = change[ignored_attr_name][0] # old value
+                                new_attr_value = change[ignored_attr_name][1] # new value
+                                if old_attr_value in ignored_attr_list or new_attr_value in ignored_attr_list:
+                                    print(f"Ignoring {change_type} of {old_entries[uuid]['dn'][0]} ({old_entries[uuid]['entryUUID'][0]}) {ignored_attr_name}: from {old_attr_value} to {new_attr_value}", file=sys.stderr)
+                                    changes[change_type].remove(change) # Remove the whole dictionary from changes["modifications"].
                             else:
-                                items_to_remove = []
-                                for added_or_removed in each[attr_name].copy():
-                                    if added_or_removed in ignored_attrs:
-                                        print(f"Ignoring {change_type} of {old_entries[uuid]['dn'][0]} ({old_entries[uuid]['entryUUID'][0]}) {attr_name}: {added_or_removed}", file=sys.stderr)
-                                        while added_or_removed in changes[change_type][i][attr_name]:
-                                            changes[change_type][i][attr_name].remove(added_or_removed)
-                                if len(changes[change_type][i][attr_name]) == 0:
-                                    changes[change_type].pop(i)
-                                    continue
-                        i += 1
+                                for added_or_removed_val in change[ignored_attr_name][:]: # val1, val2, ...
+                                    if added_or_removed_val in ignored_attr_list: # Check whether the value should be ignored.
+                                        print(f"Ignoring {change_type} of {old_entries[uuid]['dn'][0]} ({old_entries[uuid]['entryUUID'][0]}) {ignored_attr_name}: {added_or_removed_val}", file=sys.stderr)
+                                        change[ignored_attr_name].remove(added_or_removed_val) # Remove the ignored value from the set of added/removed attributes for attribute ignored_attr_name.
+                                        if len(change[ignored_attr_name]) == 0: # If the added/removed attribute set for ignored_attr_name is in now empty ( {attr_name: []} ) then delete it.
+                                            changes[change_type].remove(change)
 
-            changes_to_announce = False
             for change_type in ["additions", "modifications", "removals"]:
                 if len(changes[change_type]) > 0:
-                    changes_to_announce = True
-                    break
-            if changes_to_announce:
-                announce(f"{old_entries[uuid]['dn'][0]} ({old_entries[uuid]['entryUUID'][0]})", "modify", changes)
+                    announce(f"{old_entries[uuid]['dn'][0]} ({old_entries[uuid]['entryUUID'][0]})", "modify", changes)
 
 
 if __name__ == '__main__':
