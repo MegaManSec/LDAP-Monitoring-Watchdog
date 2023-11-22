@@ -297,7 +297,7 @@ def compare_ldap_entries(old_entries, new_entries):
                                 changes["removals"].append({key: removed})
 
             # It is worth remembering what "changes" really is.
-
+            #
             # changes["modifications"] is a set of dictionaries. Each dictionary's key is an attribute name, and the value is a tuple of (old_ldap_value, new_ldap_value).
             # changes["modifications"] =
             # [
@@ -322,8 +322,8 @@ def compare_ldap_entries(old_entries, new_entries):
 
             for change_type in ["additions", "modifications", "removals"]:
                 for ignored_attr_name, ignored_attr_list in CONDITIONAL_IGNORED_ATTRIBUTES.items():
-                    for change in changes[change_type][:]: # 'change' is each dictionary in changes.
-                        if ignored_attr_name in change: # Check if the attribute name is ignored.
+                    for change in changes[change_type][:]: # 'change' is each dictionary in changes[change_type].
+                        if ignored_attr_name in change: # Check if the ignored attribute is in the dictionary
                             if change_type == "modifications": # For modifications, we ignore the change if either the new or old value of the ignored attribute is the ignored value.
                                 old_attr_value = change[ignored_attr_name][0] # old value
                                 new_attr_value = change[ignored_attr_name][1] # new value
