@@ -36,7 +36,7 @@ The changes that are monitored can either be forwarded to a slack webhook or out
 ## Configuration
 
 ### General Settings
-- `CONTROL_UUID`: UUID of a control user's UUID whose changes trigger an error if not found. If set, this user should always have some type of change when the LDAP directory is retrieved. At least one attribute must have changed.
+- `CONTROL_UUID`: UUID of a control user whose changes trigger an error if not found. If set, this user should always have some type of change when the LDAP directory is retrieved. At least one attribute must have changed.
 - `CONTROL_USER_ATTRIBUTE`: Specify a specific attribute to check for changes in the control user. If set, this attribute _must_ have changed for the _CONTROL_UUID_ user.
 - `LDAP_SERVER`: LDAP server URL.
 - `BASE_DN`: The base Distinguished Name for LDAP searches.
