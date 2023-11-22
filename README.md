@@ -29,15 +29,15 @@ The changes that are monitored can either be forwarded to a slack webhook or out
 
 ## Examples (No Filtering)
 
+Note: in the below examples, entryCSN and modifyTimestamp can be completely ignored by setting `IGNORED_ATTRIBUTES = ['entryCSN', 'modifyTimestamp']`.
+
+### Terminal (with color) output:
+
 ![Example of the output from LDAP Stalker](example.png "LDAP Stalker")
 
+### Slack output:
+
 ![Example of the output from LDAP Stalker in Slack](example-slack.png "LDAP Stalker")
-
-
-In the above examples, entryCSN and modifyTimestamp can be completely ignored by setting `IGNORED_ATTRIBUTES = ['entryCSN', 'modifyTimestamp']`.
-
-
-
 
 ## Requirements
 - Python 3.x
