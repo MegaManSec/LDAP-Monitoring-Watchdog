@@ -27,16 +27,21 @@ The changes that are monitored can either be forwarded to a slack webhook or out
 8.  **Conditional Ignored Attributes:** Conditional filtering allows users to ignore specific attributes based on change type (additions, modifications, deletions).
 
 
-## Example (No Filtering)
+## Examples (No Filtering)
 
 ![Example of the output from LDAP Stalker](example.png "LDAP Stalker")
+
+![Example of the output from LDAP Stalker in Slack](example-slack.png "LDAP Stalker")
+
 
 In the above examples, entryCSN and modifyTimestamp can be completely ignored by setting `IGNORED_ATTRIBUTES = ['entryCSN', 'modifyTimestamp']`.
 
 
+
+
 ## Requirements
 - Python 3.x
-- The `ldap3` library (`pip install ldap3`)
+- The `ldap3` and `requests` libraries (`pip install ldap3 requests`).
 - Slack Webhook URL for notifications (optional).
 
 ## Configuration
