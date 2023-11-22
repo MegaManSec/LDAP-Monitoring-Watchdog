@@ -27,6 +27,10 @@ The changes that are monitored can either be forwarded to a slack webhook or out
 8.  **Conditional Ignored Attributes:** Conditional filtering allows users to ignore specific attributes based on change type (additions, modifications, deletions).
 
 
+## Example
+
+![Example of the output from LDAP Stalker](example.png "LDAP Stalker")
+
 
 ## Requirements
 - Python 3.x

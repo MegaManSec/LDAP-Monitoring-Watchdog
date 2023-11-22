@@ -3,14 +3,16 @@
 # This file is an original work developed by Joshua Rogers<https://joshua.hu/>.
 # Licensed under the GPL3.0 License.  You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
 
-import re
-from ldap3 import Server, Connection, ALL, SUBTREE
 import json
 import os
 import sys
 from datetime import datetime
-import requests
 import time
+
+import re
+from ldap3 import Server, Connection, ALL, SUBTREE
+from ldap3.core.exceptions import LDAPSocketOpenError
+import requests
 
 
 CONTROL_UUID = ''
@@ -341,15 +343,20 @@ def compare_ldap_entries(old_entries, new_entries):
             for change_type in ["additions", "modifications", "removals"]:
                 if len(changes[change_type]) > 0:
                     announce(f"{old_entries[uuid]['dn'][0]} ({old_entries[uuid]['entryUUID'][0]})", "modify", changes)
+                    break
 
 
 if __name__ == '__main__':
     new_entries = retrieve_ldap()
     while True:
         time.sleep(REFRESH_RATE)
-        old_entries = new_entries
-        retrieved_entries = retrieve_ldap()
-        if len(retrieved_entries) == 0:
+
+        try:
+            retrieved_entries = retrieve_ldap()
+        except LDAPSocketOpenError as e:
+            print(f"LDAP connection error: {e}", file=sys.stderr)
             continue
+
+        old_entries = new_entries
         new_entries = retrieved_entries
         compare_ldap_entries(old_entries, new_entries)

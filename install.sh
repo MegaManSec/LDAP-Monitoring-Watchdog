@@ -33,8 +33,8 @@ EOL
 
 cat <<EOL > $LDAP_DIFF_LOGROTATE_FILE
 $LDAP_DIFF_LOG_FILE {
-    daily
-    rotate 31
+    monthly
+    rotate 12
     compress
     missingok
     notifempty
