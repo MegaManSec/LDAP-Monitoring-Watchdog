@@ -27,9 +27,11 @@ The changes that are monitored can either be forwarded to a slack webhook or out
 8.  **Conditional Ignored Attributes:** Conditional filtering allows users to ignore specific attributes based on change type (additions, modifications, deletions).
 
 
-## Example
+## Example (No Filtering)
 
 ![Example of the output from LDAP Stalker](example.png "LDAP Stalker")
+
+In the above examples, entryCSN and modifyTimestamp can be completely ignored by setting `IGNORED_ATTRIBUTES = ['entryCSN', 'modifyTimestamp']`.
 
 
 ## Requirements
