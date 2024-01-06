@@ -8,6 +8,20 @@ In addition to monitoring for modifications, additions, and removals in an LDAP 
 
 The changes that are monitored can either be forwarded to a slack webhook or output to the terminal (or both). Optional colored output is also supported.
 
+A blog post about the details and history of this project [can be found here](https://joshua.hu/ldap-watchdog-python-monitoring-tool-realtime-directory-slack-notifications)
+
+## Examples (No Filtering)
+
+Note: in the below examples, entryCSN and modifyTimestamp can be completely ignored by setting `IGNORED_ATTRIBUTES = ['entryCSN', 'modifyTimestamp']`.
+
+### Terminal (with color) output:
+
+![Example of the output from LDAP Watchdog](example.png "LDAP Watchdog")
+
+### Slack output:
+
+![Example of the output from LDAP Watchdog in Slack](example-slack.png "LDAP Watchdog")
+
 ## Features
 
 1.  **Real-time Monitoring:** LDAP Watchdog continuously monitors an LDAP directory for changes in user and group entries.
@@ -26,18 +40,6 @@ The changes that are monitored can either be forwarded to a slack webhook or out
 
 8.  **Conditional Ignored Attributes:** Conditional filtering allows users to ignore specific attributes based on change type (additions, modifications, deletions).
 
-
-## Examples (No Filtering)
-
-Note: in the below examples, entryCSN and modifyTimestamp can be completely ignored by setting `IGNORED_ATTRIBUTES = ['entryCSN', 'modifyTimestamp']`.
-
-### Terminal (with color) output:
-
-![Example of the output from LDAP Watchdog](example.png "LDAP Watchdog")
-
-### Slack output:
-
-![Example of the output from LDAP Watchdog in Slack](example-slack.png "LDAP Watchdog")
 
 ## Requirements
 - Python 3.x
