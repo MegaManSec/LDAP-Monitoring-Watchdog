@@ -1,8 +1,8 @@
 
-# LDAP Stalker
+# LDAP Watchdog
 
 ## Overview
-LDAP Stalker is a tool designed to monitor record changes in an LDAP directory in real-time. It provides a mechanism to track and visualize modifications, additions, and removals to user and group entries, allowing users to correlate expected changes with actual changes and identify potential security incidents. It was created with OpenLDAP and Linux in mind, however it may work in other implementations of LDAP. It is written in Python3 and only requires the ldap3 library.
+LDAP Watchdog is a tool designed to monitor record changes in an LDAP directory in real-time. It provides a mechanism to track and visualize modifications, additions, and removals to user and group entries, allowing users to correlate expected changes with actual changes and identify potential security incidents. It was created with OpenLDAP and Linux in mind, however it may work in other implementations of LDAP. It is written in Python3 and only requires the ldap3 library.
 
 In addition to monitoring for modifications, additions, and removals in an LDAP directory, it can be configured to ignore specific attributes, or even fine-tuned to ignore fine-grained attributes depending on their old/new values.
 
@@ -10,11 +10,11 @@ The changes that are monitored can either be forwarded to a slack webhook or out
 
 ## Features
 
-1.  **Real-time Monitoring:** LDAP Stalker continuously monitors an LDAP directory for changes in user and group entries.
+1.  **Real-time Monitoring:** LDAP Watchdog continuously monitors an LDAP directory for changes in user and group entries.
 
 2.  **Change Comparison:** The tool compares changes between consecutive LDAP searches, highlighting additions, modifications, and deletions.
 
-3.  **Control User Verification:** LDAP Stalker supports a control user mechanism, triggering an error if the control user's changes are not found.
+3.  **Control User Verification:** LDAP Watchdog supports a control user mechanism, triggering an error if the control user's changes are not found.
 
 4.  **Flexible LDAP Filtering:** Users can customize LDAP filtering using the `SEARCH_FILTER` parameter to focus on specific object classes or attributes.
 
@@ -33,11 +33,11 @@ Note: in the below examples, entryCSN and modifyTimestamp can be completely igno
 
 ### Terminal (with color) output:
 
-![Example of the output from LDAP Stalker](example.png "LDAP Stalker")
+![Example of the output from LDAP Watchdog](example.png "LDAP Watchdog")
 
 ### Slack output:
 
-![Example of the output from LDAP Stalker in Slack](example-slack.png "LDAP Stalker")
+![Example of the output from LDAP Watchdog in Slack](example-slack.png "LDAP Watchdog")
 
 ## Requirements
 - Python 3.x
@@ -105,7 +105,7 @@ SLACK_WEBHOOK = os.getenv('SLACK_WEBHOOK_URL') # Use a Slack webhook, and retrie
 
 ## Usage
 1. Set the required configuration in the script.
-2. Run the script using `python3 ldap-stalker.py`.
+2. Run the script using `python3 ldap-watchdog.py`.
 
 The script will continuously monitor the LDAP directory, compare changes, and report them to both the console and Slack.
 
@@ -118,7 +118,7 @@ An optional first parameter of the installation script can define the _SLACK_WEB
 
 ```
 $ ./install.sh "https://hooks.slack.com/services/[...]"
-ldap-stalker has been installed, the service is started, and log rotation is set up.
+ldap-watchdog has been installed, the service is started, and log rotation is set up.
 ```
 
 

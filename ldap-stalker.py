@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # This file is an original work developed by Joshua Rogers<https://joshua.hu/>.
-# Licensed under the GPL3.0 License.  You should have received a copy of the GNU General Public License along with LDAP-Stalker. If not, see <https://www.gnu.org/licenses/>.
+# Licensed under the GPL3.0 License.  You should have received a copy of the GNU General Public License along with LDAP Watchdog. If not, see <https://www.gnu.org/licenses/>.
 
 import json
 import os

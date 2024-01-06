@@ -4,19 +4,19 @@ if [ "$#" -eq 1 ]; then
     SLACK_WEBHOOK_URL=$1
 fi
 
-# Step 1: Install ldap-stalker.py
-LDAP_DIFF_EXECUTABLE="/usr/local/bin/ldap-stalker.py"
-cp ldap-stalker.py "$LDAP_DIFF_EXECUTABLE"
+# Step 1: Install ldap-watchdog.py
+LDAP_DIFF_EXECUTABLE="/usr/local/bin/ldap-watchdog.py"
+cp ldap-watchdog.py "$LDAP_DIFF_EXECUTABLE"
 chmod +x "$LDAP_DIFF_EXECUTABLE"
 
-# Step 2: Create a service file and logrotate configuration for ldap-stalker
-LDAP_DIFF_LOG_FILE="/var/log/ldap-stalker.log"
-LDAP_DIFF_SERVICE_FILE="/etc/systemd/system/ldap-stalker.service"
-LDAP_DIFF_LOGROTATE_FILE="/etc/logrotate.d/ldap-stalker"
+# Step 2: Create a service file and logrotate configuration for ldap-watchdog
+LDAP_DIFF_LOG_FILE="/var/log/ldap-watchdog.log"
+LDAP_DIFF_SERVICE_FILE="/etc/systemd/system/ldap-watchdog.service"
+LDAP_DIFF_LOGROTATE_FILE="/etc/logrotate.d/ldap-watchdog"
 
 cat <<EOL > $LDAP_DIFF_SERVICE_FILE
 [Unit]
-Description=ldap-stalker Service
+Description=ldap-watchdog Service
 After=network.target
 
 [Service]
@@ -42,11 +42,11 @@ $LDAP_DIFF_LOG_FILE {
 }
 EOL
 
-# Step 3: Reload systemd and start the ldap-stalker service
+# Step 3: Reload systemd and start the ldap-watchdog service
 systemctl daemon-reload
-systemctl start ldap-stalker
+systemctl start ldap-watchdog
 
-# Step 4: Enable the ldap-stalker service to start at boot
-systemctl enable ldap-stalker
+# Step 4: Enable the ldap-watchdog service to start at boot
+systemctl enable ldap-watchdog
 
-echo "ldap-stalker has been installed, the service is started, and log rotation is set up."
+echo "ldap-watchdog has been installed, the service is started, and log rotation is set up."
