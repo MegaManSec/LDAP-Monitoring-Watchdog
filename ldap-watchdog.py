@@ -12,7 +12,9 @@ import time
 import re
 from ldap3 import Server, Connection, ALL, SUBTREE
 from ldap3.core.exceptions import LDAPSocketOpenError
-import requests
+
+if SLACK_WEBHOOK is not None and len(SLACK_WEBHOOK) > 0:
+    import requests
 
 
 CONTROL_UUID = ''
@@ -39,6 +41,9 @@ IGNORED_ATTRIBUTES = []
 CONDITIONAL_IGNORED_ATTRIBUTES = {}
 
 SLACK_WEBHOOK = os.getenv('SLACK_WEBHOOK_URL')
+
+if SLACK_WEBHOOK and len(SLACK_WEBHOOK) > 0:
+    import requests
 
 def col(op_type):
     """

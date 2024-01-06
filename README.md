@@ -2,7 +2,18 @@
 # LDAP Watchdog
 
 ## Overview
-LDAP Watchdog is a tool designed to monitor record changes in an LDAP directory in real-time. It provides a mechanism to track and visualize modifications, additions, and removals to user and group entries, allowing users to correlate expected changes with actual changes and identify potential security incidents. It was created with OpenLDAP and Linux in mind, however it may work in other implementations of LDAP. It is written in Python3 and only requires the ldap3 library.
+LDAP Watchdog is a tool designed to monitor record changes in an LDAP directory in real-time.
+It provides a mechanism to track and visualize modifications, additions, and removals to user and group entries, allowing users to correlate expected changes with actual changes and identify potential security incidents.
+It was created with OpenLDAP and Linux in mind, however it may work in other implementations of LDAP.
+It is written in Python and only requires the ldap3 library.
+
+If you're interesting in any of the following, then LDAP Watchdog is for you:
+- Know what's going on in your LDAP directory on-demand with Slack webhook integration.
+- See new hires, leavers, and promotions as they appear in LDAP.
+- Monitor _when_ and what HR is doing.
+- Detect unauthorized changes in LDAP.
+- Monitor for accidentally leaked data.
+- Detect when users are logging in and out of LDAP.
 
 In addition to monitoring for modifications, additions, and removals in an LDAP directory, it can be configured to ignore specific attributes, or even fine-tuned to ignore fine-grained attributes depending on their old/new values.
 
@@ -42,8 +53,8 @@ Note: in the below examples, entryCSN and modifyTimestamp can be completely igno
 
 
 ## Requirements
-- Python 3.x
-- The `ldap3` and `requests` libraries (`pip install ldap3 requests`).
+- Python 3.
+- The `ldap3` package (`pip install ldap3`). If using Slack a webhook, the `requests` package is also required (`pip install requests`).
 - Slack Webhook URL for notifications (optional).
 
 ## Configuration
@@ -111,7 +122,7 @@ SLACK_WEBHOOK = os.getenv('SLACK_WEBHOOK_URL') # Use a Slack webhook, and retrie
 
 The script will continuously monitor the LDAP directory, compare changes, and report them to both the console and Slack.
 
-**Note:** Ensure that the necessary libraries are installed (`ldap3`, `requests`) and that you have the required permissions to access the LDAP server.
+**Note:** Ensure that the necessary libraries are installed (`ldap3`, and `requests` if using a Slack webhook) and that you have the required permissions to access the LDAP server.
 
 ## Installation
 In addition to running the script manually, a small debian-based installation script [install.sh](install.sh) is provided which when run as root, will install a systemd service to run the script in the background and log the output. The script is installed as /usr/local/bin/ldap-diff.py, logs are sent to /var/log/ldap-diff.log, and a logrotate configuration file is created in /etc/logrotate.d/ldap-diff.
