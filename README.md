@@ -8,7 +8,7 @@ In addition to monitoring for modifications, additions, and removals in an LDAP 
 
 The changes that are monitored can either be forwarded to a slack webhook or output to the terminal (or both). Optional colored output is also supported.
 
-A blog post about the details and history of this project [can be found here](https://joshua.hu/ldap-watchdog-python-monitoring-tool-realtime-directory-slack-notifications)
+Previously named LDAP-Stalker (because monitoring changes of an LDAP directory is an excellent way to stalk changes in a company: learn about promotions before they're announced, etc.), a blog post about the details and history of this project [can be found here](https://joshua.hu/ldap-watchdog-python-monitoring-tool-realtime-directory-slack-notifications)
 
 ## Examples (No Filtering)
 
