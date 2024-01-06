@@ -2,7 +2,7 @@
 # LDAP Stalker
 
 ## Overview
-LDAP Stalker is a tool designed to monitor changes in an LDAP directory in real-time. It provides a mechanism to track and visualize modifications, additions, and removals to user and group entries, allowing users to correlate expected changes with actual changes and identify potential security incidents. It was created with OpenLDAP in mind, however it may work in other implementations of LDAP. It is written in Python3 and only requires the ldap3 library.
+LDAP Stalker is a tool designed to monitor record changes in an LDAP directory in real-time. It provides a mechanism to track and visualize modifications, additions, and removals to user and group entries, allowing users to correlate expected changes with actual changes and identify potential security incidents. It was created with OpenLDAP and Linux in mind, however it may work in other implementations of LDAP. It is written in Python3 and only requires the ldap3 library.
 
 In addition to monitoring for modifications, additions, and removals in an LDAP directory, it can be configured to ignore specific attributes, or even fine-tuned to ignore fine-grained attributes depending on their old/new values.
 
