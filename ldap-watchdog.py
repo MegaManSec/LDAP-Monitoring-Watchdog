@@ -13,10 +13,6 @@ import re
 from ldap3 import Server, Connection, ALL, SUBTREE
 from ldap3.core.exceptions import LDAPSocketOpenError
 
-if SLACK_WEBHOOK is not None and len(SLACK_WEBHOOK) > 0:
-    import requests
-
-
 CONTROL_UUID = ''
 CONTROL_USER_ATTRIBUTE = ''
 

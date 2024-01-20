@@ -1,6 +1,10 @@
 #!/bin/bash
+set -e
+
+pip3 install ldap3
 
 if [ "$#" -eq 1 ]; then
+    pip3 install requests
     SLACK_WEBHOOK_URL=$1
 fi
 
@@ -8,6 +12,7 @@ fi
 LDAP_DIFF_EXECUTABLE="/usr/local/bin/ldap-watchdog.py"
 cp ldap-watchdog.py "$LDAP_DIFF_EXECUTABLE"
 chmod +x "$LDAP_DIFF_EXECUTABLE"
+chown root:root "$LDAP_DIFF_EXECUTABLE"
 
 # Step 2: Create a service file and logrotate configuration for ldap-watchdog
 LDAP_DIFF_LOG_FILE="/var/log/ldap-watchdog.log"
@@ -50,4 +55,4 @@ systemctl start ldap-watchdog
 # Step 4: Enable the ldap-watchdog service to start at boot
 systemctl enable ldap-watchdog
 
-echo "ldap-watchdog has been installed, the service is started, and log rotation is set up."
+echo "LDAP-Watchdog has been installed in $LDAP_DIFF_EXECUTABLE, and a service has been installed in $LDAP_DIFF_SERVICE_FILE. The service is started and logging to $LDAP_DIFF_LOG_FILE and $LDAP_DIFF_ERROR_LOG_FILE, and log rotation is set up in $LDAP_DIFF_LOGROTATE_FILE."
