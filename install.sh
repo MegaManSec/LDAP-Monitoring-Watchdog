@@ -11,6 +11,7 @@ chmod +x "$LDAP_DIFF_EXECUTABLE"
 
 # Step 2: Create a service file and logrotate configuration for ldap-watchdog
 LDAP_DIFF_LOG_FILE="/var/log/ldap-watchdog.log"
+LDAP_DIFF_ERROR_LOG_FILE="/var/log/ldap-watchdog-error.log"
 LDAP_DIFF_SERVICE_FILE="/etc/systemd/system/ldap-watchdog.service"
 LDAP_DIFF_LOGROTATE_FILE="/etc/logrotate.d/ldap-watchdog"
 
@@ -25,14 +26,14 @@ Restart=always
 DynamicUser=yes
 Environment=SLACK_WEBHOOK_URL=$SLACK_WEBHOOK_URL
 StandardOutput=append:$LDAP_DIFF_LOG_FILE
-StandardError=append:$LDAP_DIFF_LOG_FILE
+StandardError=append:$LDAP_DIFF_ERROR_LOG_FILE
 
 [Install]
 WantedBy=default.target
 EOL
 
 cat <<EOL > $LDAP_DIFF_LOGROTATE_FILE
-$LDAP_DIFF_LOG_FILE {
+$LDAP_DIFF_LOG_FILE $LDAP_DIFF_ERROR_LOG_FILE {
     monthly
     rotate 12
     compress
