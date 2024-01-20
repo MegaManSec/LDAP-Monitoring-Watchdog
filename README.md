@@ -125,12 +125,12 @@ The script will continuously monitor the LDAP directory, compare changes, and re
 **Note:** Ensure that the necessary libraries are installed (`ldap3`, and `requests` if using a Slack webhook) and that you have the required permissions to access the LDAP server.
 
 ## Installation
-In addition to running the script manually, a small debian-based installation script [install.sh](install.sh) is provided which when run as root, will install a systemd service to run the script in the background and log the output. The script is installed as /usr/local/bin/ldap-diff.py, logs are sent to /var/log/ldap-diff.log, and a logrotate configuration file is created in /etc/logrotate.d/ldap-diff.
+In addition to running the script manually, a small debian-based installation script [install.sh](install.sh) is provided which when run as root, will install a systemd service to run the script in the background and log the output. The script is installed as `/usr/local/bin/ldap-watchdog.py`, logs are stored in `/var/log/ldap-watchdog.log` and `/var/log/ldap-watchdog-error.log`, and a logrotate configuration file is created in `/etc/logrotate.d/ldap-watchdog`.
 
 An optional first parameter of the installation script can define the _SLACK_WEBHOOK_URL_ environmental variable:
 
 ```
-$ ./install.sh "https://hooks.slack.com/services/[...]"
+$ sudo ./install.sh "https://hooks.slack.com/services/[...]"
 ldap-watchdog has been installed, the service is started, and log rotation is set up.
 ```
 
