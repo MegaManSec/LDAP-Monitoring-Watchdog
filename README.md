@@ -118,22 +118,47 @@ SLACK_WEBHOOK = os.getenv('SLACK_WEBHOOK_URL') # Use a Slack webhook, and retrie
 
 ## Usage
 1. Set the required configuration in the script.
-2. Run the script using `python3 ldap-watchdog.py`.
+2. Set up a Python virtual environment and install the required libraries:
+
+    ```bash
+    python3 -m venv .
+    ./bin/pip install --upgrade pip
+    ./bin/pip install install ldap3 requests
+    ```
+
+3. Set up the Slack webhook URL as an environment variable:
+
+    ```bash
+    export SLACK_WEBHOOK_URL='your_slack_webhook_url'
+    ```
+
+4. Run the script:
+
+    ```bash
+    ./bin/python ldap-watchdog.py
+    ```
 
 The script will continuously monitor the LDAP directory, compare changes, and report them to both the console and Slack.
 
-**Note:** Ensure that the necessary libraries are installed (`ldap3`, and `requests` if using a Slack webhook) and that you have the required permissions to access the LDAP server.
-
 ## Installation
-In addition to running the script manually, a small debian-based installation script [install.sh](install.sh) is provided which when run as root, will install a systemd service to run the script in the background and log the output. The script is installed as `/usr/local/bin/ldap-watchdog.py`, logs are stored in `/var/log/ldap-watchdog.log` and `/var/log/ldap-watchdog-error.log`, and a logrotate configuration file is created in `/etc/logrotate.d/ldap-watchdog`.
 
-An optional first parameter of the installation script can define the _SLACK_WEBHOOK_URL_ environmental variable:
+A Debian-based installation script, [install.sh](install.sh), is provided. When run as root, this script:
 
-```
-$ sudo ./install.sh "https://hooks.slack.com/services/[...]"
+1. Creates (if necessary) a Python virtual environment in `/opt/ldap-watchdog`.
+2. Installs the required packages into that virtual environment.
+3. Copies **ldap-watchdog.py** to `/usr/local/bin/ldap-watchdog.py`.
+4. Installs and enables a systemd service (`/etc/systemd/system/ldap-watchdog.service`) that runs **ldap-watchdog** in the background.
+5. Configures logging to `/var/log/ldap-watchdog.log` and `/var/log/ldap-watchdog.log`.
+6. Sets up log rotation in `/etc/logrotate.d/ldap-watchdog`.
+
+You may optionally pass a single argument to `install.sh` to define the `SLACK_WEBHOOK_URL` environment variable used by the script:
+
+```bash
+sudo ./install.sh "https://hooks.slack.com/services/[...]"
 ldap-watchdog has been installed, the service is started, and log rotation is set up.
 ```
 
+If you don’t provide a URL, you can manually edit /etc/systemd/system/ldap-watchdog.service later to set or change the webhook URL.
 
 ## Limitations
 1. The _CONDITIONAL_IGNORED_ATTRIBUTES_ configuration may unfortunately hide important changes that are not intended to be hidden. This may happen if an attribute has a single value which is changed. This is because _CONDITIONAL_IGNORED_ATTRIBUTES_ will hide changes to the attribute both when the value is changed __to__ _as well as_ __from__ the ignored value; for example, if a user is a memberOf _cn=mailing-list-user,ou=Accessgroups,dc=mouse,dc=com_ which gets __changed__ to _cn=super-administrator,ou=Accessgroups,dc=mouse,dc=com_, it will be missed.
