@@ -1,8 +1,5 @@
 # LDAP Watchdog
 
-[![PyPI version](https://badge.fury.io/py/LDAP-Monitor.svg)](https://pypi.org/project/LDAP-Monitor/)
-[![Docker Hub](https://img.shields.io/docker/pulls/megamansec/ldap-monitor)](https://hub.docker.com/r/megamansec/ldap-monitor)
-
 ## Overview
 LDAP Watchdog is a tool designed to monitor record changes in an LDAP directory in real-time.
 It provides a mechanism to track and visualize modifications, additions, and removals to user and group entries, allowing users to correlate expected changes with actual changes and identify potential security incidents.
