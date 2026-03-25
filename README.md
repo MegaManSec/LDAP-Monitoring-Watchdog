@@ -1,11 +1,15 @@
-
 # LDAP Watchdog
+
+[![PyPI version](https://badge.fury.io/py/LDAP-Monitor.svg)](https://pypi.org/project/LDAP-Monitor/)
+[![Docker Hub](https://img.shields.io/docker/pulls/megamansec/ldap-monitor)](https://hub.docker.com/r/megamansec/ldap-monitor)
 
 ## Overview
 LDAP Watchdog is a tool designed to monitor record changes in an LDAP directory in real-time.
 It provides a mechanism to track and visualize modifications, additions, and removals to user and group entries, allowing users to correlate expected changes with actual changes and identify potential security incidents.
 It was created with OpenLDAP and Linux in mind, however it may work in other implementations of LDAP.
 It is written in Python and only requires the ldap3 library.
+
+This software was written by [Joshua Rogers](https://joshua.hu/).
 
 If you're interesting in any of the following, then LDAP Watchdog is for you:
 - Know what's going on in your LDAP directory on-demand with Slack webhook integration.
@@ -23,7 +27,7 @@ Previously named LDAP-Stalker (because monitoring changes of an LDAP directory i
 
 ## Examples (No Filtering)
 
-Note: in the below examples, entryCSN and modifyTimestamp can be completely ignored by setting `IGNORED_ATTRIBUTES = ['entryCSN', 'modifyTimestamp']`.
+Note: in the below examples, entryCSN and modifyTimestamp can be completely ignored by setting `LDAP_WATCHDOG_IGNORED_ATTRIBUTES=entryCSN,modifyTimestamp`.
 
 ### Terminal (with color) output:
 
@@ -41,7 +45,7 @@ Note: in the below examples, entryCSN and modifyTimestamp can be completely igno
 
 3.  **Control User Verification:** LDAP Watchdog supports a control user mechanism, triggering an error if the control user's changes are not found.
 
-4.  **Flexible LDAP Filtering:** Users can customize LDAP filtering using the `SEARCH_FILTER` parameter to focus on specific object classes or attributes.
+4.  **Flexible LDAP Filtering:** Users can customize LDAP filtering using the `LDAP_WATCHDOG_SEARCH_FILTER` environment variable to focus on specific object classes or attributes.
 
 5.  **Slack Integration:** Receive real-time notifications on Slack for added, modified, or deleted LDAP entries.
 
@@ -53,115 +57,170 @@ Note: in the below examples, entryCSN and modifyTimestamp can be completely igno
 
 
 ## Requirements
-- Python 3.
-- The `ldap3` package (`pip install ldap3`). If using Slack a webhook, the `requests` package is also required (`pip install requests`).
-- Slack Webhook URL for notifications (optional).
-
-## Configuration
-
-### General Settings
-- `CONTROL_UUID`: UUID of a control user whose changes trigger an error if not found. If set, this user should always have some type of change when the LDAP directory is retrieved. At least one attribute must have changed.
-- `CONTROL_USER_ATTRIBUTE`: Specify a specific attribute to check for changes in the control user. If set, this attribute _must_ have changed for the _CONTROL_UUID_ user.
-- `LDAP_SERVER`: LDAP server URL.
-- `BASE_DN`: The base Distinguished Name for LDAP searches.
-- `SEARCH_FILTER`: LDAP filter for user and group entries.
-- `SEARCH_ATTRIBUTE`: List of attributes to retrieve during the LDAP search. [['*' '+']](https://joshua.hu/tracking-secret-ldap-login-times-with-modifytimestamp-heuristics) is used by default to include operational attributes.
-- `REFRESH_RATE`: Time interval (in seconds) between consecutive LDAP searches.
-- `LDAP_USERNAME`: LDAP username for authentication. Leave empty for anonymous bind.
-- `LDAP_PASSWORD`: LDAP password for authentication. Leave empty for anonymous bind.
-- `USE_SSL`: Set to `True` to use SSL, `False` otherwise.
-- `DISABLE_COLOR_OUTPUT`: Set to `True` to disable color output.
-
-### Slack Integration
-- `SLACK_BULLETPOINT`: Bullet point used in Slack and console output.
-- `SLACK_WEBHOOK`: Set the Slack Webhook URL as an environment variable.
-
-### Ignored Entries and Attributes
-- `IGNORED_UUIDS`: List of UUIDs to be ignored during comparison.
-- `IGNORED_ATTRIBUTES`: List of attributes to be ignored during comparison.
-
-### Conditional Ignored Attributes
-- `CONDITIONAL_IGNORED_ATTRIBUTES`: Dictionary with attributes as keys and lists of values to ignore based on change type.
-
-## Example Configuration
-
-```
-CONTROL_UUID = 'a71c6e4c-8881-4a03-95bf-4fc25d5e6359' # The entryUUID of an entry in the directory which must always have some type of modification.
-CONTROL_USER_ATTRIBUTE = '' # Specifically, if this is set, this is the attribute that must have changed.
-
-LDAP_SERVER = 'ldaps://ldaps.intra.lan' # The LDAP(S) server.
-BASE_DN = 'dc=mouse,dc=com' # The basename used by the directory.
-SEARCH_FILTER = '(&(|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))'
-SEARCH_ATTRIBUTE = ['*', '+']  # replace with the attributes you want to retrieve
-
-REFRESH_RATE = 60 # Refresh the directory every 60 seconds.
-
-LDAP_USERNAME = 'Emily'
-LDAP_PASSWORD = 'qwerty123'
-USE_SSL = True
-
-DISABLE_COLOR_OUTPUT = False
-SLACK_BULLETPOINT = ' \u2022   ' # Prepend this to each change if sending notifications via Slack.
-
-IGNORED_UUIDS = ['e191c564-6e6d-42c1-ae51-bda0509fe846', '8655e0d9-ecdc-46ce-ba42-1fa3dfbf5faa'] # Ignore any changes users with these UUIDs.
-IGNORED_ATTRIBUTES = ['modifyTimestamp', 'phoneNumber', 'officeLocation', 'gecos'] # Ignore any modifications of these attributes. 
-
-CONDITIONAL_IGNORED_ATTRIBUTES = {
-  'objectClass': ['posixAccount'], # Ignore changes to the objectClass attribute if the new or old value is posixAccount.
-  'memberOf': ['cn=mailing-list-user,ou=Accessgroups,dc=mouse,dc=com', 'cn=interns,ou=Accessgroups,dc=mouse,dc=com'], # Ignore changes to the memberOf attribute if the new or old value is either "cn=mailing-list-user,ou=Accessgroups,dc=mouse,dc=com" or "cn=interns,ou=Accessgroups,dc=mouse,dc=com".
-  'organizationalStatus': ['researcher'], # Ignore changes to the organizationalStatus attribute if the new or old value is 'researcher'.
-}
-
-SLACK_WEBHOOK = os.getenv('SLACK_WEBHOOK_URL') # Use a Slack webhook, and retrieve it from the environmental value.
-```
-
-
-## Usage
-1. Set the required configuration in the script.
-2. Set up a Python virtual environment and install the required libraries:
-
-    ```bash
-    python3 -m venv .
-    ./bin/pip install --upgrade pip
-    ./bin/pip install install ldap3 requests
-    ```
-
-3. Set up the Slack webhook URL as an environment variable:
-
-    ```bash
-    export SLACK_WEBHOOK_URL='your_slack_webhook_url'
-    ```
-
-4. Run the script:
-
-    ```bash
-    ./bin/python ldap-watchdog.py
-    ```
-
-The script will continuously monitor the LDAP directory, compare changes, and report them to both the console and Slack.
+- Python 3.7+.
+- The `ldap3` package. If using a Slack webhook, the `requests` package is also required.
 
 ## Installation
+
+### PyPI
+
+```bash
+pip install LDAP-Monitor
+```
+
+To include Slack webhook support:
+
+```bash
+pip install LDAP-Monitor[slack]
+```
+
+### Docker
+
+```bash
+docker pull megamansec/ldap-monitor
+```
+
+Or from GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/megamansec/ldap-monitoring-watchdog
+```
+
+### From Source
+
+```bash
+git clone https://github.com/MegaManSec/LDAP-Monitoring-Watchdog.git
+cd LDAP-Monitoring-Watchdog
+pip install ".[slack]"
+```
+
+## Usage
+
+### Running with pip install
+
+```bash
+export LDAP_WATCHDOG_SERVER='ldaps://ldaps.intra.lan'
+export LDAP_WATCHDOG_BASE_DN='dc=mouse,dc=com'
+export LDAP_WATCHDOG_USERNAME='Emily'
+export LDAP_WATCHDOG_PASSWORD='qwerty123'
+ldap-watchdog
+```
+
+Or using `python -m`:
+
+```bash
+python -m ldap_watchdog
+```
+
+### Running with Docker
+
+```bash
+docker run -d \
+  -e LDAP_WATCHDOG_SERVER='ldaps://ldaps.intra.lan' \
+  -e LDAP_WATCHDOG_BASE_DN='dc=mouse,dc=com' \
+  -e LDAP_WATCHDOG_USERNAME='Emily' \
+  -e LDAP_WATCHDOG_PASSWORD='qwerty123' \
+  -e SLACK_WEBHOOK_URL='https://hooks.slack.com/services/[...]' \
+  -e LDAP_WATCHDOG_IGNORED_ATTRIBUTES='modifyTimestamp,phoneNumber,officeLocation,gecos' \
+  megamansec/ldap-monitor
+```
+
+### Systemd Installation (Debian-based)
 
 A Debian-based installation script, [install.sh](install.sh), is provided. When run as root, this script:
 
 1. Creates (if necessary) a Python virtual environment in `/opt/ldap-watchdog`.
-2. Installs the required packages into that virtual environment.
-3. Copies **ldap-watchdog.py** to `/usr/local/bin/ldap-watchdog.py`.
+2. Installs LDAP Watchdog from PyPI into that virtual environment.
+3. Creates an environment file at `/etc/ldap-watchdog.env` for configuration.
 4. Installs and enables a systemd service (`/etc/systemd/system/ldap-watchdog.service`) that runs **ldap-watchdog** in the background.
-5. Configures logging to `/var/log/ldap-watchdog.log` and `/var/log/ldap-watchdog.log`.
+5. Configures logging to `/var/log/ldap-watchdog.log` and `/var/log/ldap-watchdog-error.log`.
 6. Sets up log rotation in `/etc/logrotate.d/ldap-watchdog`.
 
-You may optionally pass a single argument to `install.sh` to define the `SLACK_WEBHOOK_URL` environment variable used by the script:
+You may optionally pass a single argument to `install.sh` to set the `SLACK_WEBHOOK_URL`:
 
 ```bash
 sudo ./install.sh "https://hooks.slack.com/services/[...]"
-ldap-watchdog has been installed, the service is started, and log rotation is set up.
 ```
 
-If you don’t provide a URL, you can manually edit /etc/systemd/system/ldap-watchdog.service later to set or change the webhook URL.
+After installation, edit `/etc/ldap-watchdog.env` to configure the LDAP connection settings, then restart the service:
+
+```bash
+sudo systemctl restart ldap-watchdog
+```
+
+## Configuration
+
+All configuration is done via environment variables. The following variables are supported:
+
+### General Settings
+
+| Environment Variable | Description | Default |
+|---|---|---|
+| `LDAP_WATCHDOG_SERVER` | LDAP server URL (e.g. `ldaps://ldaps.intra.lan`) | `""` |
+| `LDAP_WATCHDOG_BASE_DN` | Base Distinguished Name for LDAP searches | `""` |
+| `LDAP_WATCHDOG_USERNAME` | LDAP username for authentication. Leave empty for anonymous bind. | `""` |
+| `LDAP_WATCHDOG_PASSWORD` | LDAP password for authentication. Leave empty for anonymous bind. | `""` |
+| `LDAP_WATCHDOG_USE_SSL` | Set to `true` to use SSL, `false` otherwise | `true` |
+| `LDAP_WATCHDOG_SEARCH_FILTER` | LDAP filter for user and group entries | `(&(&#124;(objectClass=inetOrgPerson)(objectClass=groupOfNames)))` |
+| `LDAP_WATCHDOG_SEARCH_ATTRIBUTE` | Comma-separated list of attributes to retrieve. [`*,+`](https://joshua.hu/tracking-secret-ldap-login-times-with-modifytimestamp-heuristics) is used by default to include operational attributes. | `*,+` |
+| `LDAP_WATCHDOG_REFRESH_RATE` | Time interval in seconds between consecutive LDAP searches | `60` |
+| `LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT` | Set to `true` to disable colored terminal output | `false` |
+
+### Control User
+
+| Environment Variable | Description | Default |
+|---|---|---|
+| `LDAP_WATCHDOG_CONTROL_UUID` | UUID of a control user whose changes trigger an error if not found. If set, this user should always have some type of change when the LDAP directory is retrieved. | `""` |
+| `LDAP_WATCHDOG_CONTROL_USER_ATTRIBUTE` | Specific attribute to check for changes in the control user. If set, this attribute _must_ have changed for the control UUID user. | `""` |
+
+### Slack Integration
+
+| Environment Variable | Description | Default |
+|---|---|---|
+| `SLACK_WEBHOOK_URL` | Slack Webhook URL for notifications. Requires the `slack` extra (`pip install LDAP-Monitor[slack]`). | `None` |
+| `LDAP_WATCHDOG_SLACK_BULLETPOINT` | Bullet point character used in Slack and console output | ` \u2022   ` |
+
+### Ignored Entries and Attributes
+
+| Environment Variable | Description | Default |
+|---|---|---|
+| `LDAP_WATCHDOG_IGNORED_UUIDS` | Comma-separated list of UUIDs to ignore during comparison | `""` |
+| `LDAP_WATCHDOG_IGNORED_ATTRIBUTES` | Comma-separated list of attributes to ignore during comparison | `""` |
+| `LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES` | JSON string of attributes to conditionally ignore (see below) | `{}` |
+
+### Conditional Ignored Attributes
+
+The `LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES` variable accepts a JSON string where keys are attribute names and values are lists of values to ignore:
+
+```bash
+export LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES='{
+  "objectClass": ["posixAccount"],
+  "memberOf": ["cn=mailing-list-user,ou=Accessgroups,dc=mouse,dc=com", "cn=interns,ou=Accessgroups,dc=mouse,dc=com"],
+  "organizationalStatus": ["researcher"]
+}'
+```
+
+## Example Configuration
+
+```bash
+export LDAP_WATCHDOG_CONTROL_UUID='a71c6e4c-8881-4a03-95bf-4fc25d5e6359'
+export LDAP_WATCHDOG_SERVER='ldaps://ldaps.intra.lan'
+export LDAP_WATCHDOG_BASE_DN='dc=mouse,dc=com'
+export LDAP_WATCHDOG_USERNAME='Emily'
+export LDAP_WATCHDOG_PASSWORD='qwerty123'
+export LDAP_WATCHDOG_USE_SSL='true'
+export LDAP_WATCHDOG_REFRESH_RATE='60'
+export LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT='false'
+export LDAP_WATCHDOG_IGNORED_UUIDS='e191c564-6e6d-42c1-ae51-bda0509fe846,8655e0d9-ecdc-46ce-ba42-1fa3dfbf5faa'
+export LDAP_WATCHDOG_IGNORED_ATTRIBUTES='modifyTimestamp,phoneNumber,officeLocation,gecos'
+export LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES='{"objectClass":["posixAccount"],"memberOf":["cn=mailing-list-user,ou=Accessgroups,dc=mouse,dc=com","cn=interns,ou=Accessgroups,dc=mouse,dc=com"],"organizationalStatus":["researcher"]}'
+export SLACK_WEBHOOK_URL='https://hooks.slack.com/services/[...]'
+
+ldap-watchdog
+```
 
 ## Limitations
-1. The _CONDITIONAL_IGNORED_ATTRIBUTES_ configuration may unfortunately hide important changes that are not intended to be hidden. This may happen if an attribute has a single value which is changed. This is because _CONDITIONAL_IGNORED_ATTRIBUTES_ will hide changes to the attribute both when the value is changed __to__ _as well as_ __from__ the ignored value; for example, if a user is a memberOf _cn=mailing-list-user,ou=Accessgroups,dc=mouse,dc=com_ which gets __changed__ to _cn=super-administrator,ou=Accessgroups,dc=mouse,dc=com_, it will be missed.
+1. The _LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES_ configuration may unfortunately hide important changes that are not intended to be hidden. This may happen if an attribute has a single value which is changed. This is because conditional ignored attributes will hide changes to the attribute both when the value is changed __to__ _as well as_ __from__ the ignored value; for example, if a user is a memberOf _cn=mailing-list-user,ou=Accessgroups,dc=mouse,dc=com_ which gets __changed__ to _cn=super-administrator,ou=Accessgroups,dc=mouse,dc=com_, it will be missed.
 2. Similar to #1, there is no real way to determine whether a change is really a change in some cases, or a removal and then addition in the same time. In theory, it doesn't really matter, however it's important to note.
 
 
