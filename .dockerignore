@@ -1,0 +1,9 @@
+.git
+.github
+__pycache__
+*.pyc
+*.egg-info
+dist
+build
+example.png
+example-slack.png
