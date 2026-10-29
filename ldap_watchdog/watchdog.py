@@ -44,11 +44,13 @@ def retrieve_ldap():
     server = Server(
         config.LDAP_SERVER, use_ssl=config.LDAP_USE_SSL, get_info=ALL,
         tls=Tls(validate=ssl.CERT_REQUIRED, ca_certs_file=config.LDAP_CA_CERTS_FILE),
+        connect_timeout=config.NETWORK_TIMEOUT,
     )
     if config.LDAP_USERNAME and config.LDAP_PASSWORD:
-        conn = Connection(server, user=config.LDAP_USERNAME, password=config.LDAP_PASSWORD)
+        conn = Connection(server, user=config.LDAP_USERNAME, password=config.LDAP_PASSWORD,
+                          receive_timeout=config.NETWORK_TIMEOUT)
     else:
-        conn = Connection(server)
+        conn = Connection(server, receive_timeout=config.NETWORK_TIMEOUT)
 
     try:
         if not conn.bind():
@@ -197,9 +199,13 @@ def send_to_slack(message):
 
     message = truncate_slack_message(message)
 
-    headers = {'Content-type': 'application/json'}
-    data = {'text': message}
-    requests.post(config.SLACK_WEBHOOK, headers=headers, data=json.dumps(data))
+    try:
+        response = requests.post(config.SLACK_WEBHOOK, json={'text': message}, timeout=config.NETWORK_TIMEOUT)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        # Exception messages can contain the secret webhook URL.
+        detail = f"HTTP {e.response.status_code}" if e.response is not None else type(e).__name__
+        print(f"Slack notification failed: {detail}", file=sys.stderr)
 
 
 def check_control_user(old_entries, new_entries):

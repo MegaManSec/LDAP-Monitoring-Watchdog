@@ -162,6 +162,7 @@ All configuration is done via environment variables. The following variables are
 | `LDAP_WATCHDOG_SEARCH_FILTER` | LDAP filter for user and group entries | `(&(&#124;(objectClass=inetOrgPerson)(objectClass=groupOfNames)))` |
 | `LDAP_WATCHDOG_SEARCH_ATTRIBUTE` | Comma-separated list of attributes to retrieve. [`*,+`](https://joshua.hu/tracking-secret-ldap-login-times-with-modifytimestamp-heuristics) is used by default to include operational attributes. `entryUUID` is always requested and must be readable for every entry. | `*,+` |
 | `LDAP_WATCHDOG_REFRESH_RATE` | Time interval in seconds between consecutive LDAP searches | `60` |
+| `LDAP_WATCHDOG_NETWORK_TIMEOUT` | Positive integer timeout in seconds for LDAP and Slack connection/read operations. This limits individual waits, not the total duration of a poll. | `30` |
 | `LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT` | Set to `true` to disable colored terminal output | `false` |
 
 LDAPS connections verify the server certificate and hostname. For a private CA, set `LDAP_WATCHDOG_CA_CERTS_FILE` to a readable PEM CA bundle; in Docker, mount the bundle into the container and use its container path.
@@ -179,6 +180,8 @@ LDAPS connections verify the server certificate and hostname. For a private CA, 
 |---|---|---|
 | `SLACK_WEBHOOK_URL` | Slack Webhook URL for notifications. Requires the `slack` extra (`pip install LDAP-Monitor[slack]`). | `None` |
 | `LDAP_WATCHDOG_SLACK_BULLETPOINT` | Bullet point character used in Slack and console output | ` \u2022   ` |
+
+Slack delivery is best effort: HTTP and network failures are logged to stderr, and monitoring and console output continue. Failed notifications are not queued or retried.
 
 ### Ignored Entries and Attributes
 

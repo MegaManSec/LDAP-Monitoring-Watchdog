@@ -37,6 +37,9 @@ SEARCH_FILTER = os.getenv('LDAP_WATCHDOG_SEARCH_FILTER', '(&(|(objectClass=inetO
 SEARCH_ATTRIBUTE = _parse_list(os.getenv('LDAP_WATCHDOG_SEARCH_ATTRIBUTE', '*,+'))
 
 REFRESH_RATE = int(os.getenv('LDAP_WATCHDOG_REFRESH_RATE', '60'))
+NETWORK_TIMEOUT = int(os.getenv('LDAP_WATCHDOG_NETWORK_TIMEOUT', '30'))
+if NETWORK_TIMEOUT <= 0:
+    raise ValueError('LDAP_WATCHDOG_NETWORK_TIMEOUT must be greater than zero')
 
 SLACK_BULLETPOINT = os.getenv('LDAP_WATCHDOG_SLACK_BULLETPOINT', ' \u2022   ')
 

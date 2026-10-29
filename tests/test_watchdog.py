@@ -2,11 +2,12 @@ import io
 import json
 import ssl
 import unittest
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from unittest.mock import Mock, patch
 
 from ldap3 import Connection, MOCK_SYNC, OFFLINE_SLAPD_2_4, Server
 from ldap3.core.exceptions import LDAPException, LDAPSocketReceiveError
+import requests
 
 from ldap_watchdog import config, watchdog
 
@@ -192,3 +193,40 @@ class TLSTests(unittest.TestCase):
         server = factory.call_args[0][0]
         self.assertTrue(server.ssl)
         self.assertEqual(server.tls.validate, ssl.CERT_REQUIRED)
+
+
+class NetworkTests(unittest.TestCase):
+    def test_ldap_waits_are_bounded_for_authenticated_and_anonymous_binds(self):
+        for username, password in (('', ''), ('alice', 'password')):
+            with self.subTest(authenticated=bool(username)):
+                connection = Mock()
+                connection.bind.return_value = False
+                with patch.multiple(config, LDAP_SERVER='localhost', LDAP_CA_CERTS_FILE=None,
+                                    LDAP_USERNAME=username, LDAP_PASSWORD=password, NETWORK_TIMEOUT=7), \
+                        patch.object(watchdog, 'Connection', return_value=connection) as factory:
+                    with self.assertRaises(LDAPException):
+                        watchdog.retrieve_ldap()
+                self.assertEqual(factory.call_args[0][0].connect_timeout, 7)
+                self.assertEqual(factory.call_args[1]['receive_timeout'], 7)
+
+    def test_slack_failures_are_reported_without_losing_console_output(self):
+        response = requests.Response()
+        response.status_code = 429
+        response.url = 'https://example.invalid/secret-webhook'
+        for failure in (response, requests.ConnectionError('secret-webhook')):
+            with self.subTest(failure=type(failure).__name__):
+                output, errors = io.StringIO(), io.StringIO()
+                with patch.multiple(config, SLACK_WEBHOOK=response.url, NETWORK_TIMEOUT=7), \
+                        patch.object(watchdog, 'requests', requests, create=True), \
+                        patch.object(requests, 'post') as post, \
+                        redirect_stdout(output), redirect_stderr(errors):
+                    if isinstance(failure, Exception):
+                        post.side_effect = failure
+                    else:
+                        post.return_value = failure
+                    watchdog.announce(DN, 'add', {'cn': ['Alice']})
+                self.assertIn('Alice', output.getvalue())
+                self.assertIn('Slack notification failed', errors.getvalue())
+                self.assertIn('ConnectionError' if isinstance(failure, Exception) else 'HTTP 429', errors.getvalue())
+                self.assertNotIn('secret-webhook', errors.getvalue())
+                self.assertEqual(post.call_args[1]['timeout'], 7)
