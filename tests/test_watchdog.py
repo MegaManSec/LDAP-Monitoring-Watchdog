@@ -1,5 +1,6 @@
 import io
 import json
+import ssl
 import unittest
 from contextlib import redirect_stderr
 from unittest.mock import Mock, patch
@@ -178,3 +179,16 @@ class SnapshotTests(unittest.TestCase):
                     with self.assertRaises(KeyboardInterrupt):
                         watchdog.main()
                 compare.assert_called_once_with(old, new)
+
+
+class TLSTests(unittest.TestCase):
+    def test_ldaps_requires_a_trusted_certificate(self):
+        connection = Mock()
+        connection.bind.return_value = False
+        with patch.multiple(config, LDAP_SERVER='ldaps://localhost', LDAP_CA_CERTS_FILE=None), \
+                patch.object(watchdog, 'Connection', return_value=connection) as factory:
+            with self.assertRaises(LDAPException):
+                watchdog.retrieve_ldap()
+        server = factory.call_args[0][0]
+        self.assertTrue(server.ssl)
+        self.assertEqual(server.tls.validate, ssl.CERT_REQUIRED)

@@ -4,11 +4,12 @@
 # Licensed under the GPL3.0 License.  You should have received a copy of the GNU General Public License along with LDAP Watchdog. If not, see <https://www.gnu.org/licenses/>.
 
 import json
+import ssl
 import sys
 from datetime import datetime
 import time
 
-from ldap3 import Server, Connection, ALL, SUBTREE
+from ldap3 import Server, Connection, Tls, ALL, SUBTREE
 from ldap3.core.exceptions import LDAPException
 
 from ldap_watchdog import config
@@ -40,7 +41,10 @@ def retrieve_ldap():
     - dict: Dictionary containing LDAP entries.
     """
     entries = {}
-    server = Server(config.LDAP_SERVER, use_ssl=config.LDAP_USE_SSL, get_info=ALL)
+    server = Server(
+        config.LDAP_SERVER, use_ssl=config.LDAP_USE_SSL, get_info=ALL,
+        tls=Tls(validate=ssl.CERT_REQUIRED, ca_certs_file=config.LDAP_CA_CERTS_FILE),
+    )
     if config.LDAP_USERNAME and config.LDAP_PASSWORD:
         conn = Connection(server, user=config.LDAP_USERNAME, password=config.LDAP_PASSWORD)
     else:

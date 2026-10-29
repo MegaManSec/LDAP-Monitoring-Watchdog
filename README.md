@@ -158,10 +158,13 @@ All configuration is done via environment variables. The following variables are
 | `LDAP_WATCHDOG_USERNAME` | LDAP username for authentication. Leave empty for anonymous bind. | `""` |
 | `LDAP_WATCHDOG_PASSWORD` | LDAP password for authentication. Leave empty for anonymous bind. | `""` |
 | `LDAP_WATCHDOG_USE_SSL` | Set to `true` to use SSL, `false` otherwise | `true` |
+| `LDAP_WATCHDOG_CA_CERTS_FILE` | Optional PEM CA bundle for verifying the LDAP server certificate. If unset, system trust roots are used. | Unset |
 | `LDAP_WATCHDOG_SEARCH_FILTER` | LDAP filter for user and group entries | `(&(&#124;(objectClass=inetOrgPerson)(objectClass=groupOfNames)))` |
 | `LDAP_WATCHDOG_SEARCH_ATTRIBUTE` | Comma-separated list of attributes to retrieve. [`*,+`](https://joshua.hu/tracking-secret-ldap-login-times-with-modifytimestamp-heuristics) is used by default to include operational attributes. `entryUUID` is always requested and must be readable for every entry. | `*,+` |
 | `LDAP_WATCHDOG_REFRESH_RATE` | Time interval in seconds between consecutive LDAP searches | `60` |
 | `LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT` | Set to `true` to disable colored terminal output | `false` |
+
+LDAPS connections verify the server certificate and hostname. For a private CA, set `LDAP_WATCHDOG_CA_CERTS_FILE` to a readable PEM CA bundle; in Docker, mount the bundle into the container and use its container path.
 
 ### Control User
 
