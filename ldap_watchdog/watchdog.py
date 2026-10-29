@@ -294,10 +294,10 @@ def compare_ldap_entries(old_entries, new_entries):
                 if old_value != new_value:
                     if old_value is None:
                         # If the key is not found in old_entries, it's an addition.
-                        changes["additions"].append({key: new_value})
+                        changes["additions"].append({key: list(new_value)})
                     elif new_value is None:
                         # If the key is not found in new_entries, it's a removal.
-                        changes["removals"].append({key: old_value})
+                        changes["removals"].append({key: list(old_value)})
                     else:
                         # If the key is in both old_entries and new_entries but the values are not the same, then may be a modification.
                         # There is no way to truly determine whether an attribute's value(s) have been changed, or removed and then a new value added.

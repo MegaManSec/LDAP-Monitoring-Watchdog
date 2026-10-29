@@ -1,3 +1,4 @@
+import copy
 import io
 import json
 import os
@@ -50,6 +51,18 @@ class ComparisonTests(unittest.TestCase):
                 snapshot(memberOf=['existing']), snapshot(memberOf=['existing', 'ignored']),
             )
         announce.assert_not_called()
+
+    def test_conditional_filter_leaves_snapshots_unchanged(self):
+        for change_type, old, new in (
+            ('additions', snapshot(), snapshot(memberOf=['ignored', 'important'])),
+            ('removals', snapshot(memberOf=['ignored', 'important']), snapshot()),
+        ):
+            with self.subTest(change_type=change_type):
+                expected = copy.deepcopy((old, new))
+                with patch.object(watchdog, 'announce') as announce, redirect_stderr(io.StringIO()):
+                    watchdog.compare_ldap_entries(old, new)
+                self.assertEqual(announce.call_args[0][2][change_type], [{'memberOf': ['important']}])
+                self.assertEqual((old, new), expected)
 
 
 class MessageTests(unittest.TestCase):
