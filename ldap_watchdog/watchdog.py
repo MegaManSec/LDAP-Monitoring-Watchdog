@@ -160,8 +160,8 @@ def announce(dn_uuid, op_type, changes):
     - None
     """
     slack_msg, print_msg = generate_message(dn_uuid, op_type, changes)
+    print(print_msg, flush=True)
     send_to_slack(slack_msg)
-    print(print_msg)
 
 
 def truncate_slack_message(message):
