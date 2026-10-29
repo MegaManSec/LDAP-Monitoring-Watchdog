@@ -5,6 +5,7 @@ import os
 import socket
 import ssl
 import threading
+import time
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from unittest.mock import Mock, patch
@@ -86,6 +87,23 @@ class MessageTests(unittest.TestCase):
             watchdog.truncate_slack_message(message),
             'photo [...truncated...] important change',
         )
+
+    def test_truncation_replaces_the_longest_words_first(self):
+        for words, expected in (
+            (['b' * 2500, 'a' * 2500, 'c' * 100], ['[...truncated...]', 'a' * 2500, 'c' * 100]),
+            (['x' * 2000, 'y' * 600, 'x' * 2000, 'z' * 20], ['[...truncated...]', 'y' * 600, '[...truncated...]', 'z' * 20]),
+        ):
+            with self.subTest(words=[len(word) for word in words]):
+                self.assertEqual(watchdog.truncate_slack_message(' '.join(words)), ' '.join(expected))
+
+    def test_truncation_of_large_groups_is_fast(self):
+        message, _ = watchdog.generate_message(DN, 'delete', {
+            'member': [f'uid=user{i:06d},ou=People,dc=example,dc=com' for i in range(8000)],
+        })
+        start = time.perf_counter()
+        truncated = watchdog.truncate_slack_message(message)
+        self.assertLess(time.perf_counter() - start, 1)
+        self.assertEqual(len(truncated), 4000)
 
 
 class RetrievalTests(unittest.TestCase):

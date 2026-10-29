@@ -4,8 +4,10 @@
 # Licensed under the GPL3.0 License.  You should have received a copy of the GNU General Public License along with LDAP Watchdog. If not, see <https://www.gnu.org/licenses/>.
 
 import json
+import re
 import ssl
 import sys
+from collections import Counter
 from datetime import datetime
 import time
 
@@ -187,12 +189,18 @@ def truncate_slack_message(message):
     - str: Truncated Slack message.
     """
     marker = "[...truncated...]"
-    while len(message) > 4000:
-        longest_word = max(message.split(), key=len, default='')
-        if len(longest_word) <= len(marker):
-            return message[:4000 - len(marker)] + marker
-        message = message.replace(longest_word, marker)
+    words = Counter(message.split())
+    length = len(message)
+    replaced = set()
+    for word in sorted(words, key=len, reverse=True):
+        if length <= 4000 or len(word) <= len(marker):
+            break
+        replaced.add(word)
+        length -= words[word] * (len(word) - len(marker))
 
+    message = re.sub(r'\S+', lambda match: marker if match.group() in replaced else match.group(), message)
+    if len(message) > 4000:
+        return message[:4000 - len(marker)] + marker
     return message
 
 
