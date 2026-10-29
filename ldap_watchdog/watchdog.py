@@ -310,7 +310,7 @@ def compare_ldap_entries(old_entries, new_entries):
                                     print(f"Ignoring {change_type} of {old_entries[uuid]['dn'][0]} ({old_entries[uuid]['entryUUID'][0]}) {ignored_attr_name}: from {old_attr_value} to {new_attr_value}", file=sys.stderr)
                                     changes[change_type].remove(change) # Remove the whole dictionary from changes["modifications"].
                             else:
-                                for added_or_removed_val in change[ignored_attr_name][:]: # val1, val2, ...
+                                for added_or_removed_val in change[ignored_attr_name].copy(): # val1, val2, ...
                                     if added_or_removed_val in ignored_attr_list: # Check whether the value should be ignored.
                                         print(f"Ignoring {change_type} of {old_entries[uuid]['dn'][0]} ({old_entries[uuid]['entryUUID'][0]}) {ignored_attr_name}: {added_or_removed_val}", file=sys.stderr)
                                         change[ignored_attr_name].remove(added_or_removed_val) # Remove the ignored value from the set of added/removed attributes for attribute ignored_attr_name.
