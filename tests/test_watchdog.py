@@ -40,3 +40,26 @@ class ComparisonTests(unittest.TestCase):
                 snapshot(memberOf=['existing']), snapshot(memberOf=['existing', 'ignored']),
             )
         announce.assert_not_called()
+
+
+class MessageTests(unittest.TestCase):
+    def test_short_messages_are_unchanged(self):
+        for message in ('', 'hello', 'x' * 4000):
+            self.assertEqual(watchdog.truncate_slack_message(message), message)
+
+    def test_truncation_handles_many_short_words_and_whitespace(self):
+        group_message, _ = watchdog.generate_message(DN, 'add', {
+            'member': [f'uid=user{i},ou=People,dc=example,dc=com' for i in range(100)],
+        })
+        for message in ('word ' * 1000, ' ' * 5000, group_message):
+            with self.subTest(length=len(message)):
+                truncated = watchdog.truncate_slack_message(message)
+                self.assertLessEqual(len(truncated), 4000)
+                self.assertIn('[...truncated...]', truncated)
+
+    def test_truncation_preserves_text_after_a_large_value(self):
+        message = 'photo ' + 'x' * 5000 + ' important change'
+        self.assertEqual(
+            watchdog.truncate_slack_message(message),
+            'photo [...truncated...] important change',
+        )

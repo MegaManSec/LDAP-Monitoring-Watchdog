@@ -152,9 +152,12 @@ def truncate_slack_message(message):
     Returns:
     - str: Truncated Slack message.
     """
+    marker = "[...truncated...]"
     while len(message) > 4000:
-        longest_word = max(message.split(), key=len)
-        message = message.replace(longest_word, "[...truncated...]")
+        longest_word = max(message.split(), key=len, default='')
+        if len(longest_word) <= len(marker):
+            return message[:4000 - len(marker)] + marker
+        message = message.replace(longest_word, marker)
 
     return message
 
