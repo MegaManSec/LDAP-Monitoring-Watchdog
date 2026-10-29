@@ -24,7 +24,7 @@ Previously named LDAP-Stalker (because monitoring changes of an LDAP directory i
 
 ## Examples (No Filtering)
 
-Note: in the below examples, entryCSN and modifyTimestamp can be completely ignored by setting `LDAP_WATCHDOG_IGNORED_ATTRIBUTES=entryCSN,modifyTimestamp`.
+Note: in the below examples, changes to entryCSN and modifyTimestamp on existing entries can be ignored by setting `LDAP_WATCHDOG_IGNORED_ATTRIBUTES=entryCSN,modifyTimestamp`.
 
 ### Terminal (with color) output:
 
@@ -48,7 +48,7 @@ Note: in the below examples, entryCSN and modifyTimestamp can be completely igno
 
 6.  **Customizable Output:** Console output provides clear and colored indications of additions, modifications, and deletions for easy visibility.
 
-7.  **Ignored Entries and Attributes:** Users can specify UUIDs and attributes to be ignored during the comparison process.
+7.  **Ignored Entries and Attributes:** Users can specify UUIDs and attributes to ignore when comparing changes to existing entries.
 
 8.  **Conditional Ignored Attributes:** Conditional filtering allows users to ignore specific attributes based on change type (additions, modifications, deletions).
 
@@ -172,7 +172,9 @@ LDAPS connections verify the server certificate and hostname. For a private CA, 
 | Environment Variable | Description | Default |
 |---|---|---|
 | `LDAP_WATCHDOG_CONTROL_UUID` | UUID of a control user whose changes trigger an error if not found. If set, this user should always have some type of change when the LDAP directory is retrieved. | `""` |
-| `LDAP_WATCHDOG_CONTROL_USER_ATTRIBUTE` | Specific attribute to check for changes in the control user. If set, this attribute _must_ have changed for the control UUID user. | `""` |
+| `LDAP_WATCHDOG_CONTROL_USER_ATTRIBUTE` | Specific attribute to check in the control user. If set, it must exist in both snapshots and its value must differ. | `""` |
+
+A failed control check logs an error and skips that comparison. The next poll compares against the most recent successfully retrieved snapshot; changes from a rejected comparison are not replayed. A failed LDAP retrieval instead preserves the previous snapshot and is retried on the next poll. Failure to retrieve the initial snapshot stops the process.
 
 ### Slack Integration
 
@@ -185,10 +187,12 @@ Slack delivery is best effort: HTTP and network failures are logged to stderr, a
 
 ### Ignored Entries and Attributes
 
+These filters apply to attribute changes on entries present in both snapshots. Entry additions and deletions are always announced with all retrieved attributes, including for ignored UUIDs.
+
 | Environment Variable | Description | Default |
 |---|---|---|
-| `LDAP_WATCHDOG_IGNORED_UUIDS` | Comma-separated list of UUIDs to ignore during comparison | `""` |
-| `LDAP_WATCHDOG_IGNORED_ATTRIBUTES` | Comma-separated list of attributes to ignore during comparison | `""` |
+| `LDAP_WATCHDOG_IGNORED_UUIDS` | Comma-separated list of UUIDs whose attribute changes are ignored | `""` |
+| `LDAP_WATCHDOG_IGNORED_ATTRIBUTES` | Comma-separated list of attributes whose changes are ignored on existing entries | `""` |
 | `LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES` | JSON string of attributes to conditionally ignore (see below) | `{}` |
 
 ### Conditional Ignored Attributes
@@ -226,6 +230,15 @@ ldap-watchdog
 1. The _LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES_ configuration may unfortunately hide important changes that are not intended to be hidden. This may happen if an attribute has a single value which is changed. This is because conditional ignored attributes will hide changes to the attribute both when the value is changed __to__ _as well as_ __from__ the ignored value; for example, if a user is a memberOf _cn=mailing-list-user,ou=Accessgroups,dc=mouse,dc=com_ which gets __changed__ to _cn=super-administrator,ou=Accessgroups,dc=mouse,dc=com_, it will be missed.
 2. Similar to #1, there is no real way to determine whether a change is really a change in some cases, or a removal and then addition in the same time. In theory, it doesn't really matter, however it's important to note.
 
+
+## Development
+
+Install the package with Slack support and run the regression tests:
+
+```bash
+pip install ".[slack]"
+python -m unittest discover -s tests
+```
 
 ## License
 This project is licensed under [GPL3.0](/LICENSE).
