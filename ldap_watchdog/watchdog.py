@@ -57,13 +57,14 @@ def retrieve_ldap():
     for entry in conn.entries:
         entry = json.loads(entry.entry_to_json())
         entry_dict = entry['attributes']
-        for attr_name, attr_value in entry_dict.items():
-            attr_value = attr_value[0]
-            # Some entries may be encoded using base64 and provided by a dictionary.
-            # In that case, replace the dictionary with a string of the encoded data.
-            if isinstance(attr_value, dict) and len(attr_value) == 2 and 'encoded' in attr_value and 'encoding' in attr_value and attr_value['encoding'] == 'base64':
-                decoded_value = attr_value['encoded']
-                entry_dict[attr_name] = decoded_value
+        for attr_name, values in entry_dict.items():
+            # Keep every value, including binary data represented as Base64 by ldap3.
+            entry_dict[attr_name] = [
+                value['encoded']
+                if isinstance(value, dict) and value.get('encoding') == 'base64'
+                else value
+                for value in values
+            ]
 
         entry_dict['dn'] = [entry['dn']]
         entries[entry_dict['entryUUID'][0]] = entry_dict
