@@ -1,10 +1,11 @@
 import io
+import json
 import unittest
 from contextlib import redirect_stderr
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from ldap3 import Connection, MOCK_SYNC, OFFLINE_SLAPD_2_4, Server
-from ldap3.core.exceptions import LDAPException
+from ldap3.core.exceptions import LDAPException, LDAPSocketReceiveError
 
 from ldap_watchdog import config, watchdog
 
@@ -114,3 +115,66 @@ class RetrievalTests(unittest.TestCase):
             watchdog.compare_ldap_entries(old, new)
         announce.assert_called_once()
         self.assertEqual(announce.call_args[0][2]['modifications'], [{'jpegPhoto': ('/wA=', 'A/w=')}])
+
+
+class SnapshotTests(unittest.TestCase):
+    def setUp(self):
+        self.connection = Mock()
+        self.connection.bind.return_value = True
+        self.connection.result = {'result': 0}
+        self.connection.entries = []
+        for patcher in (
+            patch.object(watchdog, 'Server'),
+            patch.object(watchdog, 'Connection', return_value=self.connection),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_failed_bind_is_not_an_empty_snapshot(self):
+        self.connection.bind.return_value = False
+        self.connection.result = {'result': 49, 'description': 'invalidCredentials'}
+        with self.assertRaisesRegex(LDAPException, 'bind failed'):
+            watchdog.retrieve_ldap()
+        self.connection.unbind.assert_called_once()
+
+    def test_successful_empty_search_is_a_valid_snapshot(self):
+        self.connection.search.return_value = False
+        self.assertEqual(watchdog.retrieve_ldap(), {})
+        self.connection.unbind.assert_called_once()
+
+    def set_page(self, uuid, cookie, result=0):
+        self.connection.entries = [Mock(entry_to_json=Mock(return_value=json.dumps({
+            'dn': DN, 'attributes': {'entryUUID': [uuid]},
+        })))]
+        self.connection.result = {
+            'result': result,
+            'controls': {'1.2.840.113556.1.4.319': {'value': {'cookie': cookie}}},
+        }
+
+    def test_all_pages_are_retrieved(self):
+        pages = iter([(UUID, b'next'), ('second', b'')])
+        self.connection.search.side_effect = lambda **kwargs: self.set_page(*next(pages))
+        self.assertEqual(set(watchdog.retrieve_ldap()), {UUID, 'second'})
+        calls = self.connection.search.call_args_list
+        self.assertEqual([call[1]['paged_cookie'] for call in calls], [None, b'next'])
+        self.connection.unbind.assert_called_once()
+
+    def test_later_page_failure_rejects_the_entire_snapshot(self):
+        pages = iter([(UUID, b'next', 0), ('second', b'', 4)])
+        self.connection.search.side_effect = lambda **kwargs: self.set_page(*next(pages))
+        with self.assertRaisesRegex(LDAPException, 'search failed'):
+            watchdog.retrieve_ldap()
+        self.connection.unbind.assert_called_once()
+
+    def test_failed_poll_preserves_the_last_successful_snapshot(self):
+        old = snapshot(title=['old'])
+        new = snapshot(title=['new'])
+        for error in (LDAPException('search failed'), LDAPSocketReceiveError('disconnected')):
+            with self.subTest(error=type(error).__name__):
+                with patch.object(watchdog, 'retrieve_ldap', side_effect=[old, error, new]), \
+                        patch.object(watchdog.time, 'sleep', side_effect=[None, None, KeyboardInterrupt]), \
+                        patch.object(watchdog, 'compare_ldap_entries') as compare, \
+                        redirect_stderr(io.StringIO()):
+                    with self.assertRaises(KeyboardInterrupt):
+                        watchdog.main()
+                compare.assert_called_once_with(old, new)

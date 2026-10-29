@@ -9,7 +9,7 @@ from datetime import datetime
 import time
 
 from ldap3 import Server, Connection, ALL, SUBTREE
-from ldap3.core.exceptions import LDAPException, LDAPSocketOpenError
+from ldap3.core.exceptions import LDAPException
 
 from ldap_watchdog import config
 
@@ -43,33 +43,46 @@ def retrieve_ldap():
     server = Server(config.LDAP_SERVER, use_ssl=config.LDAP_USE_SSL, get_info=ALL)
     if config.LDAP_USERNAME and config.LDAP_PASSWORD:
         conn = Connection(server, user=config.LDAP_USERNAME, password=config.LDAP_PASSWORD)
-        if not conn.bind():
-            print('Error in bind:', conn.result, file=sys.stderr)
-            return entries
     else:
         conn = Connection(server)
+
+    try:
         if not conn.bind():
-            print('Anonymous bind failed:', conn.result, file=sys.stderr)
-            return entries
+            raise LDAPException(f"LDAP bind failed: {conn.result}")
 
-    conn.search(search_base=config.BASE_DN, search_filter=config.SEARCH_FILTER, search_scope=SUBTREE, attributes=config.SEARCH_ATTRIBUTE + ['entryUUID'])
+        cookie = None
+        while True:
+            conn.search(
+                search_base=config.BASE_DN, search_filter=config.SEARCH_FILTER,
+                search_scope=SUBTREE, attributes=config.SEARCH_ATTRIBUTE + ['entryUUID'],
+                paged_size=500, paged_cookie=cookie,
+            )
+            # A successful search can return no entries; check the result code.
+            if conn.result['result'] != 0:
+                raise LDAPException(f"LDAP search failed: {conn.result}")
 
-    for entry in conn.entries:
-        entry = json.loads(entry.entry_to_json())
-        entry_dict = entry['attributes']
-        for attr_name, values in entry_dict.items():
-            # Keep every value, including binary data represented as Base64 by ldap3.
-            entry_dict[attr_name] = [
-                value['encoded']
-                if isinstance(value, dict) and value.get('encoding') == 'base64'
-                else value
-                for value in values
-            ]
+            for entry in conn.entries:
+                entry = json.loads(entry.entry_to_json())
+                entry_dict = entry['attributes']
+                for attr_name, values in entry_dict.items():
+                    # Keep every value, including binary data represented as Base64 by ldap3.
+                    entry_dict[attr_name] = [
+                        value['encoded']
+                        if isinstance(value, dict) and value.get('encoding') == 'base64'
+                        else value
+                        for value in values
+                    ]
 
-        entry_dict['dn'] = [entry['dn']]
-        if not entry_dict.get('entryUUID'):
-            raise LDAPException(f"LDAP entry {entry['dn']} has no readable entryUUID")
-        entries[entry_dict['entryUUID'][0]] = entry_dict
+                entry_dict['dn'] = [entry['dn']]
+                if not entry_dict.get('entryUUID'):
+                    raise LDAPException(f"LDAP entry {entry['dn']} has no readable entryUUID")
+                entries[entry_dict['entryUUID'][0]] = entry_dict
+
+            cookie = conn.result.get('controls', {}).get('1.2.840.113556.1.4.319', {}).get('value', {}).get('cookie')
+            if not cookie:
+                break
+    finally:
+        conn.unbind()
 
     return entries
 
@@ -336,8 +349,8 @@ def main():
 
         try:
             retrieved_entries = retrieve_ldap()
-        except LDAPSocketOpenError as e:
-            print(f"LDAP connection error: {e}", file=sys.stderr)
+        except LDAPException as e:
+            print(f"LDAP retrieval error: {e}", file=sys.stderr)
             continue
 
         old_entries = new_entries
