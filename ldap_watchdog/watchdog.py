@@ -9,7 +9,7 @@ from datetime import datetime
 import time
 
 from ldap3 import Server, Connection, ALL, SUBTREE
-from ldap3.core.exceptions import LDAPSocketOpenError
+from ldap3.core.exceptions import LDAPException, LDAPSocketOpenError
 
 from ldap_watchdog import config
 
@@ -52,7 +52,7 @@ def retrieve_ldap():
             print('Anonymous bind failed:', conn.result, file=sys.stderr)
             return entries
 
-    conn.search(search_base=config.BASE_DN, search_filter=config.SEARCH_FILTER, search_scope=SUBTREE, attributes=config.SEARCH_ATTRIBUTE)
+    conn.search(search_base=config.BASE_DN, search_filter=config.SEARCH_FILTER, search_scope=SUBTREE, attributes=config.SEARCH_ATTRIBUTE + ['entryUUID'])
 
     for entry in conn.entries:
         entry = json.loads(entry.entry_to_json())
@@ -67,6 +67,8 @@ def retrieve_ldap():
             ]
 
         entry_dict['dn'] = [entry['dn']]
+        if not entry_dict.get('entryUUID'):
+            raise LDAPException(f"LDAP entry {entry['dn']} has no readable entryUUID")
         entries[entry_dict['entryUUID'][0]] = entry_dict
 
     return entries

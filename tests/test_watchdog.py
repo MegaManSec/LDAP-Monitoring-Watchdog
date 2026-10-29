@@ -4,6 +4,7 @@ from contextlib import redirect_stderr
 from unittest.mock import patch
 
 from ldap3 import Connection, MOCK_SYNC, OFFLINE_SLAPD_2_4, Server
+from ldap3.core.exceptions import LDAPException
 
 from ldap_watchdog import config, watchdog
 
@@ -80,16 +81,27 @@ class RetrievalTests(unittest.TestCase):
 
     def retrieve(self, **attributes):
         connection = Connection(Server('mock', get_info=OFFLINE_SLAPD_2_4), client_strategy=MOCK_SYNC)
-        connection.strategy.add_entry(DN, dict(
+        entry = dict(
             objectClass=['inetOrgPerson'], cn=['Alice'], sn=['Example'],
-            entryUUID=[UUID], **attributes,
-        ))
+            entryUUID=[UUID],
+        )
+        entry.update(attributes)
+        connection.strategy.add_entry(DN, entry)
         with patch.object(watchdog, 'Server'), patch.object(watchdog, 'Connection', return_value=connection):
             return watchdog.retrieve_ldap()
 
     def test_absent_requested_attribute_is_empty(self):
         config.SEARCH_ATTRIBUTE = ['cn', 'mail', 'entryUUID']
         self.assertEqual(self.retrieve()[UUID]['mail'], [])
+
+    def test_uuid_is_retrieved_with_custom_attribute_selection(self):
+        config.SEARCH_ATTRIBUTE = ['cn']
+        self.assertEqual(self.retrieve()[UUID]['entryUUID'], [UUID])
+        self.assertEqual(config.SEARCH_ATTRIBUTE, ['cn'])
+
+    def test_missing_uuid_rejects_the_snapshot(self):
+        with self.assertRaisesRegex(LDAPException, 'no readable entryUUID'):
+            self.retrieve(entryUUID=[])
 
     def test_all_binary_values_are_preserved(self):
         entry = self.retrieve(jpegPhoto=[b'\xff\x00', b'\x03\xfc'])[UUID]
