@@ -1,6 +1,9 @@
 import io
 import json
+import os
+import socket
 import ssl
+import threading
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from unittest.mock import Mock, patch
@@ -14,6 +17,7 @@ from ldap_watchdog import config, watchdog
 
 UUID = '11111111-1111-1111-1111-111111111111'
 DN = 'cn=Alice,dc=example,dc=com'
+CERTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'certs')
 
 
 def snapshot(**attributes):
@@ -193,6 +197,49 @@ class TLSTests(unittest.TestCase):
         server = factory.call_args[0][0]
         self.assertTrue(server.ssl)
         self.assertEqual(server.tls.validate, ssl.CERT_REQUIRED)
+
+    def requests_received(self, certificate, host, ca_certs_file):
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(os.path.join(CERTS, certificate))
+        server_names, received = [], []
+        context.sni_callback = lambda tls, server_name, _: server_names.append(server_name)
+        listener = socket.socket()
+        listener.settimeout(5)
+        listener.bind(('127.0.0.1', 0))
+        listener.listen(1)
+
+        def serve():
+            with listener:
+                try:
+                    with listener.accept()[0] as client, context.wrap_socket(client, server_side=True) as tls:
+                        if tls.recv(1):
+                            received.append(server_names[-1])
+                except OSError:
+                    pass
+
+        server = threading.Thread(target=serve)
+        server.start()
+        with patch.multiple(config, LDAP_SERVER=f'ldaps://{host}:{listener.getsockname()[1]}',
+                            LDAP_CA_CERTS_FILE=ca_certs_file and os.path.join(CERTS, ca_certs_file),
+                            LDAP_USERNAME='', LDAP_PASSWORD='', NETWORK_TIMEOUT=5):
+            with self.assertRaises(LDAPException):
+                watchdog.retrieve_ldap()
+        server.join()
+        return received
+
+    def test_certificate_is_verified_for_dns_names_and_ip_addresses(self):
+        for host, server_name in (('localhost', 'localhost'), ('127.0.0.1', None)):
+            with self.subTest(host=host):
+                self.assertEqual(self.requests_received('localhost.pem', host, 'localhost.pem'), [server_name])
+
+    def test_mismatched_or_untrusted_certificates_are_rejected(self):
+        for certificate, host, ca_certs_file in (
+            ('ldap.example.com.pem', 'localhost', 'ldap.example.com.pem'),
+            ('ldap.example.com.pem', '127.0.0.1', 'ldap.example.com.pem'),
+            ('localhost.pem', 'localhost', None),
+        ):
+            with self.subTest(certificate=certificate, host=host, ca_certs_file=ca_certs_file):
+                self.assertEqual(self.requests_received(certificate, host, ca_certs_file), [])
 
 
 class NetworkTests(unittest.TestCase):

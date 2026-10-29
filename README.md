@@ -165,7 +165,7 @@ All configuration is done via environment variables. The following variables are
 | `LDAP_WATCHDOG_NETWORK_TIMEOUT` | Positive integer timeout in seconds for LDAP and Slack connection/read operations. This limits individual waits, not the total duration of a poll. | `30` |
 | `LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT` | Set to `true` to disable colored terminal output | `false` |
 
-LDAPS connections verify the server certificate and hostname. For a private CA, set `LDAP_WATCHDOG_CA_CERTS_FILE` to a readable PEM CA bundle; in Docker, mount the bundle into the container and use its container path.
+LDAPS connections verify the server certificate and check that it is valid for the host name or IP address in `LDAP_WATCHDOG_SERVER`. For a private CA, set `LDAP_WATCHDOG_CA_CERTS_FILE` to a readable PEM CA bundle; in Docker, mount the bundle into the container and use its container path.
 
 ### Control User
 

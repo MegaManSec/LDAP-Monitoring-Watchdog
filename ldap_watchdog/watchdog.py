@@ -33,6 +33,18 @@ def col(op_type):
     return {'add': "\033[1m\033[32m", 'delete': "\033[3m\033[31m", 'modify': "\033[33m"}[op_type]
 
 
+class VerifiedTls(Tls):
+    """
+    ldap3 TLS settings that verify the server certificate and hostname with the ssl module's default context.
+    """
+
+    def wrap_socket(self, connection, do_handshake=False):
+        context = ssl.create_default_context(cafile=self.ca_certs_file)
+        connection.socket = context.wrap_socket(
+            connection.socket, server_hostname=connection.server.host, do_handshake_on_connect=do_handshake,
+        )
+
+
 def retrieve_ldap():
     """
     Connects to the LDAP server and retrieves LDAP entries.
@@ -43,7 +55,7 @@ def retrieve_ldap():
     entries = {}
     server = Server(
         config.LDAP_SERVER, use_ssl=config.LDAP_USE_SSL, get_info=ALL,
-        tls=Tls(validate=ssl.CERT_REQUIRED, ca_certs_file=config.LDAP_CA_CERTS_FILE),
+        tls=VerifiedTls(validate=ssl.CERT_REQUIRED, ca_certs_file=config.LDAP_CA_CERTS_FILE),
         connect_timeout=config.NETWORK_TIMEOUT,
     )
     if config.LDAP_USERNAME and config.LDAP_PASSWORD:
