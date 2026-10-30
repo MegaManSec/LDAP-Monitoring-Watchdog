@@ -288,12 +288,40 @@ class TLSTests(unittest.TestCase):
             with self.subTest(certificate=certificate, host=host):
                 self.assertEqual(len(self.requests_received(certificate, host, None, verify=False)), 1)
 
-    def test_empty_verification_setting_keeps_the_default(self):
+
+class ConfigTests(unittest.TestCase):
+    BOOLEANS = (
+        ('LDAP_WATCHDOG_USE_SSL', 'LDAP_USE_SSL', True),
+        ('LDAP_WATCHDOG_TLS_VERIFY', 'LDAP_TLS_VERIFY', True),
+        ('LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT', 'DISABLE_COLOR_OUTPUT', False),
+    )
+
+    def setUp(self):
         self.addCleanup(importlib.reload, config)
-        for value, verify in (('', True), ('false', False)):
-            with self.subTest(value=value), patch.dict(os.environ, {'LDAP_WATCHDOG_TLS_VERIFY': value}):
-                importlib.reload(config)
-                self.assertIs(config.LDAP_TLS_VERIFY, verify)
+
+    def load(self, **environ):
+        with patch.dict(os.environ, environ):
+            importlib.reload(config)
+
+    def test_booleans_accept_common_spellings_and_default_when_empty(self):
+        for variable, attribute, default in self.BOOLEANS:
+            for value, expected in (
+                ('', default), ('  ', default), ('""', default),
+                ('true', True), ('TRUE', True), (' yes ', True), ('"1"', True), ("'on'", True),
+                ('false', False), ('Off', False), ('"no"', False), ('0 ', False),
+            ):
+                with self.subTest(variable=variable, value=value):
+                    self.load(**{variable: value})
+                    self.assertIs(getattr(config, attribute), expected)
+
+    def test_unrecognized_booleans_are_rejected(self):
+        for variable, _, _ in self.BOOLEANS:
+            for value in ('enabled', 'ture', '"true', '\'true"'):
+                with self.subTest(variable=variable, value=value):
+                    with self.assertRaises(ValueError) as raised:
+                        self.load(**{variable: value})
+                    self.assertIn(variable, str(raised.exception))
+                    self.assertIn(repr(value), str(raised.exception))
 
 
 class NetworkTests(unittest.TestCase):

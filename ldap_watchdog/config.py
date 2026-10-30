@@ -5,8 +5,19 @@ import json
 import os
 
 
-def _parse_bool(val):
-    return val.lower() in ('true', '1', 'yes')
+def _parse_bool(name, default):
+    raw = os.getenv(name, '')
+    val = raw.strip()
+    if len(val) > 1 and val[0] == val[-1] and val[0] in '"\'':
+        val = val[1:-1]
+    val = val.lower()
+    if not val:
+        return default
+    if val in ('true', '1', 'yes', 'on'):
+        return True
+    if val in ('false', '0', 'no', 'off'):
+        return False
+    raise ValueError(f'{name} must be true/false, 1/0, yes/no or on/off, not {raw!r}')
 
 
 def _parse_list(val):
@@ -27,12 +38,12 @@ CONTROL_USER_ATTRIBUTE = os.getenv('LDAP_WATCHDOG_CONTROL_USER_ATTRIBUTE', '')
 LDAP_SERVER = os.getenv('LDAP_WATCHDOG_SERVER', '')
 LDAP_USERNAME = os.getenv('LDAP_WATCHDOG_USERNAME', '')
 LDAP_PASSWORD = os.getenv('LDAP_WATCHDOG_PASSWORD', '')
-LDAP_USE_SSL = _parse_bool(os.getenv('LDAP_WATCHDOG_USE_SSL') or 'true')
+LDAP_USE_SSL = _parse_bool('LDAP_WATCHDOG_USE_SSL', True)
 LDAP_CA_CERTS_FILE = os.getenv('LDAP_WATCHDOG_CA_CERTS_FILE') or None
-LDAP_TLS_VERIFY = _parse_bool(os.getenv('LDAP_WATCHDOG_TLS_VERIFY') or 'true')
+LDAP_TLS_VERIFY = _parse_bool('LDAP_WATCHDOG_TLS_VERIFY', True)
 BASE_DN = os.getenv('LDAP_WATCHDOG_BASE_DN', '')
 
-DISABLE_COLOR_OUTPUT = _parse_bool(os.getenv('LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT') or 'false')
+DISABLE_COLOR_OUTPUT = _parse_bool('LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT', False)
 
 SEARCH_FILTER = os.getenv('LDAP_WATCHDOG_SEARCH_FILTER', '(&(|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))')
 SEARCH_ATTRIBUTE = _parse_list(os.getenv('LDAP_WATCHDOG_SEARCH_ATTRIBUTE', '*,+'))
