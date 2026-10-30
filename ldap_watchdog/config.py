@@ -1,5 +1,5 @@
 # This file is an original work developed by Joshua Rogers<https://joshua.hu/>.
-# Licensed under the GPL3.0 License.
+# Licensed under the GPL-3.0-or-later License.
 
 import json
 import os
