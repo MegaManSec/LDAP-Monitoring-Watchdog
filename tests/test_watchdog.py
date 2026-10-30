@@ -323,6 +323,16 @@ class ConfigTests(unittest.TestCase):
                     self.assertIn(variable, str(raised.exception))
                     self.assertIn(repr(value), str(raised.exception))
 
+    def test_empty_settings_use_their_defaults(self):
+        self.load(**dict.fromkeys((
+            'LDAP_WATCHDOG_SEARCH_FILTER', 'LDAP_WATCHDOG_SEARCH_ATTRIBUTE',
+            'LDAP_WATCHDOG_REFRESH_RATE', 'LDAP_WATCHDOG_NETWORK_TIMEOUT',
+        ), ''))
+        self.assertEqual(
+            (config.SEARCH_FILTER, config.SEARCH_ATTRIBUTE, config.REFRESH_RATE, config.NETWORK_TIMEOUT),
+            ('(&(|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))', ['*', '+'], 60, 30),
+        )
+
 
 class NetworkTests(unittest.TestCase):
     def test_ldap_waits_are_bounded_for_authenticated_and_anonymous_binds(self):

@@ -45,11 +45,11 @@ BASE_DN = os.getenv('LDAP_WATCHDOG_BASE_DN', '')
 
 DISABLE_COLOR_OUTPUT = _parse_bool('LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT', False)
 
-SEARCH_FILTER = os.getenv('LDAP_WATCHDOG_SEARCH_FILTER', '(&(|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))')
-SEARCH_ATTRIBUTE = _parse_list(os.getenv('LDAP_WATCHDOG_SEARCH_ATTRIBUTE', '*,+'))
+SEARCH_FILTER = os.getenv('LDAP_WATCHDOG_SEARCH_FILTER') or '(&(|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))'
+SEARCH_ATTRIBUTE = _parse_list(os.getenv('LDAP_WATCHDOG_SEARCH_ATTRIBUTE') or '*,+')
 
-REFRESH_RATE = int(os.getenv('LDAP_WATCHDOG_REFRESH_RATE', '60'))
-NETWORK_TIMEOUT = int(os.getenv('LDAP_WATCHDOG_NETWORK_TIMEOUT', '30'))
+REFRESH_RATE = int(os.getenv('LDAP_WATCHDOG_REFRESH_RATE') or '60')
+NETWORK_TIMEOUT = int(os.getenv('LDAP_WATCHDOG_NETWORK_TIMEOUT') or '30')
 if NETWORK_TIMEOUT <= 0:
     raise ValueError('LDAP_WATCHDOG_NETWORK_TIMEOUT must be greater than zero')
 
