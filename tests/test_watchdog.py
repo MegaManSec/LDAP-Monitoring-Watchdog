@@ -306,8 +306,8 @@ class ConfigTests(unittest.TestCase):
     def test_booleans_accept_common_spellings_and_default_when_empty(self):
         for variable, attribute, default in self.BOOLEANS:
             for value, expected in (
-                ('', default), ('  ', default), ('""', default),
-                ('true', True), ('TRUE', True), (' yes ', True), ('"1"', True), ("'on'", True),
+                ('', default), ('  ', default), ('""', default), ('" "', default),
+                ('true', True), ('TRUE', True), (' yes ', True), ('"1"', True), ("'on'", True), ('" true "', True),
                 ('false', False), ('Off', False), ('"no"', False), ('0 ', False),
             ):
                 with self.subTest(variable=variable, value=value):
@@ -324,14 +324,16 @@ class ConfigTests(unittest.TestCase):
                     self.assertIn(repr(value), str(raised.exception))
 
     def test_empty_settings_use_their_defaults(self):
-        self.load(**dict.fromkeys((
-            'LDAP_WATCHDOG_SEARCH_FILTER', 'LDAP_WATCHDOG_SEARCH_ATTRIBUTE',
-            'LDAP_WATCHDOG_REFRESH_RATE', 'LDAP_WATCHDOG_NETWORK_TIMEOUT',
-        ), ''))
-        self.assertEqual(
-            (config.SEARCH_FILTER, config.SEARCH_ATTRIBUTE, config.REFRESH_RATE, config.NETWORK_TIMEOUT),
-            ('(&(|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))', ['*', '+'], 60, 30),
-        )
+        for value in ('', '  '):
+            with self.subTest(value=value):
+                self.load(**dict.fromkeys((
+                    'LDAP_WATCHDOG_SEARCH_FILTER', 'LDAP_WATCHDOG_SEARCH_ATTRIBUTE',
+                    'LDAP_WATCHDOG_REFRESH_RATE', 'LDAP_WATCHDOG_NETWORK_TIMEOUT',
+                ), value))
+                self.assertEqual(
+                    (config.SEARCH_FILTER, config.SEARCH_ATTRIBUTE, config.REFRESH_RATE, config.NETWORK_TIMEOUT),
+                    ('(&(|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))', ['*', '+'], 60, 30),
+                )
 
 
 class NetworkTests(unittest.TestCase):

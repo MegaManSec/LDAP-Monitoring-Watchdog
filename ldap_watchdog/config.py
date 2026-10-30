@@ -9,7 +9,7 @@ def _parse_bool(name, default):
     raw = os.getenv(name, '')
     val = raw.strip()
     if len(val) > 1 and val[0] == val[-1] and val[0] in '"\'':
-        val = val[1:-1]
+        val = val[1:-1].strip()
     val = val.lower()
     if not val:
         return default
@@ -18,6 +18,10 @@ def _parse_bool(name, default):
     if val in ('false', '0', 'no', 'off'):
         return False
     raise ValueError(f'{name} must be true/false, 1/0, yes/no or on/off, not {raw!r}')
+
+
+def _setting(name, default):
+    return os.getenv(name, '').strip() or default
 
 
 def _parse_list(val):
@@ -45,11 +49,11 @@ BASE_DN = os.getenv('LDAP_WATCHDOG_BASE_DN', '')
 
 DISABLE_COLOR_OUTPUT = _parse_bool('LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT', False)
 
-SEARCH_FILTER = os.getenv('LDAP_WATCHDOG_SEARCH_FILTER') or '(&(|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))'
-SEARCH_ATTRIBUTE = _parse_list(os.getenv('LDAP_WATCHDOG_SEARCH_ATTRIBUTE') or '*,+')
+SEARCH_FILTER = _setting('LDAP_WATCHDOG_SEARCH_FILTER', '(&(|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))')
+SEARCH_ATTRIBUTE = _parse_list(_setting('LDAP_WATCHDOG_SEARCH_ATTRIBUTE', '*,+'))
 
-REFRESH_RATE = int(os.getenv('LDAP_WATCHDOG_REFRESH_RATE') or '60')
-NETWORK_TIMEOUT = int(os.getenv('LDAP_WATCHDOG_NETWORK_TIMEOUT') or '30')
+REFRESH_RATE = int(_setting('LDAP_WATCHDOG_REFRESH_RATE', '60'))
+NETWORK_TIMEOUT = int(_setting('LDAP_WATCHDOG_NETWORK_TIMEOUT', '30'))
 if NETWORK_TIMEOUT <= 0:
     raise ValueError('LDAP_WATCHDOG_NETWORK_TIMEOUT must be greater than zero')
 
