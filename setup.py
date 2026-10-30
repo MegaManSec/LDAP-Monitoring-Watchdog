@@ -22,12 +22,13 @@ setup(
     },
     license="GPL-3.0",
     packages=find_packages(),
-    python_requires=">=3.7",
+    python_requires=">=3.10",
     install_requires=[
         "ldap3",
+        "pyasn1>=0.6.4",
     ],
     extras_require={
-        "slack": ["requests"],
+        "slack": ["requests>=2.33.0"],
     },
     entry_points={
         "console_scripts": [
@@ -36,9 +37,6 @@ setup(
     },
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",

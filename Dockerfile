@@ -2,9 +2,10 @@ FROM python:3-alpine
 
 WORKDIR /app
 
-COPY setup.py MANIFEST.in README.md LICENSE ./
+COPY requirements.txt setup.py MANIFEST.in README.md LICENSE ./
 COPY ldap_watchdog/ ./ldap_watchdog/
 
-RUN pip install --no-cache-dir .[slack]
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir --no-deps .
 
 CMD ["ldap-watchdog"]

@@ -54,7 +54,7 @@ Note: in the below examples, changes to entryCSN and modifyTimestamp on existing
 
 
 ## Requirements
-- Python 3.7+.
+- Python 3.10+.
 - The `ldap3` package. If using a Slack webhook, the `requests` package is also required.
 
 ## Installation
@@ -124,10 +124,10 @@ docker run -d \
 
 ### Systemd Installation (Debian-based)
 
-A Debian-based installation script, [install.sh](install.sh), is provided. When run as root, this script:
+A Debian-based installation script, [install.sh](install.sh), is provided. When run as root from a clone of this repository, this script:
 
 1. Creates (if necessary) a Python virtual environment in `/opt/ldap-watchdog`.
-2. Installs LDAP Watchdog from PyPI into that virtual environment.
+2. Installs LDAP Watchdog from the clone into that virtual environment, with the dependency versions pinned in `requirements.txt`.
 3. Creates an environment file at `/etc/ldap-watchdog.env` for configuration.
 4. Installs and enables a systemd service (`/etc/systemd/system/ldap-watchdog.service`) that runs **ldap-watchdog** in the background.
 5. Configures logging to `/var/log/ldap-watchdog.log` and `/var/log/ldap-watchdog-error.log`.
@@ -239,6 +239,8 @@ Install the package with Slack support and run the regression tests:
 pip install ".[slack]"
 python -m unittest discover -s tests
 ```
+
+`requirements.txt` pins every dependency for the Docker image and `install.sh`. After changing the dependencies in `setup.py`, regenerate it with `pip-compile --extra=slack --output-file=requirements.txt setup.py`.
 
 ## License
 This project is licensed under [GPL3.0](/LICENSE).

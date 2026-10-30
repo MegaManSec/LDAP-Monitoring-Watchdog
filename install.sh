@@ -1,13 +1,16 @@
 #!/bin/bash
 set -e
 
+cd "$(dirname "$0")"
+
 VENV_PATH="/opt/ldap-watchdog"
 
 if [ ! -d "$VENV_PATH" ]; then
     python3 -m venv "$VENV_PATH"
 fi
 "$VENV_PATH/bin/pip" install --upgrade pip
-"$VENV_PATH/bin/pip" install "LDAP-Monitor[slack]"
+"$VENV_PATH/bin/pip" install -r requirements.txt
+"$VENV_PATH/bin/pip" install --no-deps .
 
 if [ "$#" -eq 1 ]; then
     SLACK_WEBHOOK_URL=$1
@@ -69,7 +72,7 @@ EOL
 
 systemctl daemon-reload
 systemctl enable ldap-watchdog
-systemctl start ldap-watchdog
+systemctl restart ldap-watchdog
 
 echo "ldap-watchdog has been installed, the service is started, and log rotation is set up."
 echo " - Configuration: $LDAP_DIFF_ENV_FILE"
