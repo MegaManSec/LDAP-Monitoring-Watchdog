@@ -181,7 +181,7 @@ LDAPS connections verify the server certificate and check that it is valid for t
 
 | Environment Variable | Description | Default |
 |---|---|---|
-| `LDAP_WATCHDOG_CONTROL_UUID` | `entryUUID` of a control user that is changed (e.g. by a cron job) before every poll. Unless one of its attributes present in both snapshots has a new value, the comparison is rejected with an error. The user must match the base DN and search filter, and its changes are announced unless it is also in `LDAP_WATCHDOG_IGNORED_UUIDS`. | `""` |
+| `LDAP_WATCHDOG_CONTROL_UUID` | `entryUUID` of a control user that is changed (e.g. by a cron job) before every poll. Unless one of its attributes present in both snapshots has a new value, the comparison is rejected with an error. The user must match the base DN and search filter, and its changes are announced unless the ignore filters hide them, e.g. by listing it in `LDAP_WATCHDOG_IGNORED_UUIDS`. | `""` |
 | `LDAP_WATCHDOG_CONTROL_USER_ATTRIBUTE` | Specific attribute to check in the control user. If set, it must exist in both snapshots and its value must differ. | `""` |
 
 A failed control check logs an error and skips that comparison. The next poll compares against the most recent successfully retrieved snapshot; changes from a rejected comparison are not replayed. A failed LDAP retrieval instead preserves the previous snapshot and is retried on the next poll. Failure to retrieve the initial snapshot stops the process.
