@@ -50,7 +50,7 @@ Note: in the below examples, changes to entryCSN and modifyTimestamp on existing
 
 7.  **Ignored Entries and Attributes:** Users can specify UUIDs and attributes to ignore when comparing changes to existing entries.
 
-8.  **Conditional Ignored Attributes:** Conditional filtering allows users to ignore specific attributes based on change type (additions, modifications, deletions).
+8.  **Conditional Ignored Attributes:** Users can ignore changes to an attribute only when they involve specific values, such as one group in `memberOf`.
 
 
 ## Requirements
@@ -118,7 +118,7 @@ docker run -d \
   -e LDAP_WATCHDOG_USERNAME='cn=Emily,ou=People,dc=mouse,dc=com' \
   -e LDAP_WATCHDOG_PASSWORD='qwerty123' \
   -e SLACK_WEBHOOK_URL='https://hooks.slack.com/services/[...]' \
-  -e LDAP_WATCHDOG_IGNORED_ATTRIBUTES='modifyTimestamp,phoneNumber,officeLocation,gecos' \
+  -e LDAP_WATCHDOG_IGNORED_ATTRIBUTES='entryCSN,modifyTimestamp,telephoneNumber,roomNumber,gecos' \
   megamansec/ldap-monitor
 ```
 
@@ -190,7 +190,7 @@ Slack delivery is best effort: HTTP and network failures are logged to stderr, a
 
 ### Ignored Entries and Attributes
 
-These filters apply to attribute changes on entries present in both snapshots. Entry additions and deletions are always announced with all retrieved attributes, including for ignored UUIDs.
+These filters apply to attribute changes on entries present in both snapshots. Entry additions and deletions are always announced with all retrieved attributes, including for ignored UUIDs. UUIDs are `entryUUID` values, shown in parentheses after the DN in each message, and names and values must match exactly, including case (`modifyTimestamp`, not `modifytimestamp`). Each ignored change is still written to stderr with its values.
 
 | Environment Variable | Description | Default |
 |---|---|---|
@@ -200,7 +200,7 @@ These filters apply to attribute changes on entries present in both snapshots. E
 
 ### Conditional Ignored Attributes
 
-The `LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES` variable accepts a JSON string where keys are attribute names and values are lists of values to ignore:
+The `LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES` variable accepts a JSON object where keys are attribute names and values are arrays of values to ignore (an array even for one value):
 
 ```bash
 export LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES='{
@@ -209,6 +209,8 @@ export LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES='{
   "organizationalStatus": ["researcher"]
 }'
 ```
+
+If an attribute has exactly one value before and after, the whole change is hidden when either value is listed (see Limitations). Otherwise only the listed values are dropped from the added or removed values. Invalid JSON stops the process at startup.
 
 ## Example Configuration
 
@@ -224,7 +226,7 @@ export LDAP_WATCHDOG_REFRESH_RATE='60'
 export LDAP_WATCHDOG_NETWORK_TIMEOUT='30'
 export LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT='false'
 export LDAP_WATCHDOG_IGNORED_UUIDS='e191c564-6e6d-42c1-ae51-bda0509fe846,8655e0d9-ecdc-46ce-ba42-1fa3dfbf5faa'
-export LDAP_WATCHDOG_IGNORED_ATTRIBUTES='modifyTimestamp,phoneNumber,officeLocation,gecos'
+export LDAP_WATCHDOG_IGNORED_ATTRIBUTES='entryCSN,modifyTimestamp,telephoneNumber,roomNumber,gecos'
 export LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES='{"objectClass":["posixAccount"],"memberOf":["cn=mailing-list-user,ou=Accessgroups,dc=mouse,dc=com","cn=interns,ou=Accessgroups,dc=mouse,dc=com"],"organizationalStatus":["researcher"]}'
 export SLACK_WEBHOOK_URL='https://hooks.slack.com/services/[...]'
 
