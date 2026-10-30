@@ -98,7 +98,7 @@ pip install ".[slack]"
 ```bash
 export LDAP_WATCHDOG_SERVER='ldaps://ldaps.intra.lan'
 export LDAP_WATCHDOG_BASE_DN='dc=mouse,dc=com'
-export LDAP_WATCHDOG_USERNAME='Emily'
+export LDAP_WATCHDOG_USERNAME='cn=Emily,ou=People,dc=mouse,dc=com'
 export LDAP_WATCHDOG_PASSWORD='qwerty123'
 ldap-watchdog
 ```
@@ -115,7 +115,7 @@ python -m ldap_watchdog
 docker run -d \
   -e LDAP_WATCHDOG_SERVER='ldaps://ldaps.intra.lan' \
   -e LDAP_WATCHDOG_BASE_DN='dc=mouse,dc=com' \
-  -e LDAP_WATCHDOG_USERNAME='Emily' \
+  -e LDAP_WATCHDOG_USERNAME='cn=Emily,ou=People,dc=mouse,dc=com' \
   -e LDAP_WATCHDOG_PASSWORD='qwerty123' \
   -e SLACK_WEBHOOK_URL='https://hooks.slack.com/services/[...]' \
   -e LDAP_WATCHDOG_IGNORED_ATTRIBUTES='modifyTimestamp,phoneNumber,officeLocation,gecos' \
@@ -153,16 +153,16 @@ All configuration is done via environment variables. The following variables are
 
 | Environment Variable | Description | Default |
 |---|---|---|
-| `LDAP_WATCHDOG_SERVER` | LDAP server URL (e.g. `ldaps://ldaps.intra.lan`) | `""` |
+| `LDAP_WATCHDOG_SERVER` | LDAP server URL or host name (e.g. `ldaps://ldaps.intra.lan`). If empty, localhost is used. | `""` |
 | `LDAP_WATCHDOG_BASE_DN` | Base Distinguished Name for LDAP searches | `""` |
-| `LDAP_WATCHDOG_USERNAME` | LDAP username for authentication. Leave empty for anonymous bind. | `""` |
-| `LDAP_WATCHDOG_PASSWORD` | LDAP password for authentication. Leave empty for anonymous bind. | `""` |
-| `LDAP_WATCHDOG_USE_SSL` | Set to `true` to use SSL, `false` otherwise | `true` |
+| `LDAP_WATCHDOG_USERNAME` | Bind DN for authentication (e.g. `cn=Emily,ou=People,dc=mouse,dc=com`). If this or the password is empty, the bind is anonymous. | `""` |
+| `LDAP_WATCHDOG_PASSWORD` | Password for `LDAP_WATCHDOG_USERNAME` | `""` |
+| `LDAP_WATCHDOG_USE_SSL` | Set to `true` to use SSL (LDAPS, default port 636 instead of 389), `false` otherwise. An `ldaps://` or `ldap://` scheme in `LDAP_WATCHDOG_SERVER` overrides this. | `true` |
 | `LDAP_WATCHDOG_CA_CERTS_FILE` | Optional PEM CA bundle for verifying the LDAP server certificate. If unset, system trust roots are used. | Unset |
 | `LDAP_WATCHDOG_TLS_VERIFY` | Set to `false` to skip verifying the LDAP server certificate and host name. The connection is still encrypted but not authenticated. | `true` |
 | `LDAP_WATCHDOG_SEARCH_FILTER` | LDAP filter for user and group entries | `(&(\|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))` |
 | `LDAP_WATCHDOG_SEARCH_ATTRIBUTE` | Comma-separated list of attributes to retrieve. [`*,+`](https://joshua.hu/tracking-secret-ldap-login-times-with-modifytimestamp-heuristics) is used by default to include operational attributes. `entryUUID` is always requested and must be readable for every entry. | `*,+` |
-| `LDAP_WATCHDOG_REFRESH_RATE` | Time interval in seconds between consecutive LDAP searches | `60` |
+| `LDAP_WATCHDOG_REFRESH_RATE` | Whole number of seconds to wait after each LDAP search before the next one | `60` |
 | `LDAP_WATCHDOG_NETWORK_TIMEOUT` | Positive integer timeout in seconds for LDAP and Slack connection/read operations. This limits individual waits, not the total duration of a poll. | `30` |
 | `LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT` | Set to `true` to disable colored terminal output | `false` |
 
@@ -216,7 +216,7 @@ export LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES='{
 export LDAP_WATCHDOG_CONTROL_UUID='a71c6e4c-8881-4a03-95bf-4fc25d5e6359'
 export LDAP_WATCHDOG_SERVER='ldaps://ldaps.intra.lan'
 export LDAP_WATCHDOG_BASE_DN='dc=mouse,dc=com'
-export LDAP_WATCHDOG_USERNAME='Emily'
+export LDAP_WATCHDOG_USERNAME='cn=Emily,ou=People,dc=mouse,dc=com'
 export LDAP_WATCHDOG_PASSWORD='qwerty123'
 export LDAP_WATCHDOG_USE_SSL='true'
 export LDAP_WATCHDOG_TLS_VERIFY='true'
