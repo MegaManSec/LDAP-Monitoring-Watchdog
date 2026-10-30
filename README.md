@@ -160,7 +160,7 @@ All configuration is done via environment variables; an empty value is the same 
 
 | Environment Variable | Description | Default |
 |---|---|---|
-| `LDAP_WATCHDOG_SERVER` | LDAP server URL or host name (e.g. `ldaps://ldaps.intra.lan`). If empty, localhost is used. | `""` |
+| `LDAP_WATCHDOG_SERVER` | LDAP server URL or host name (e.g. `ldaps://ldaps.intra.lan`). Required. | `""` |
 | `LDAP_WATCHDOG_BASE_DN` | Base Distinguished Name for LDAP searches | `""` |
 | `LDAP_WATCHDOG_USERNAME` | Bind DN for authentication (e.g. `cn=Emily,ou=People,dc=mouse,dc=com`). If this or the password is empty, the bind is anonymous. | `""` |
 | `LDAP_WATCHDOG_PASSWORD` | Password for `LDAP_WATCHDOG_USERNAME` | `""` |
