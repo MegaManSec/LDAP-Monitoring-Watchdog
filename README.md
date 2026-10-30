@@ -243,7 +243,7 @@ ldap-watchdog
 ## Limitations
 1. The `LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES` configuration may unfortunately hide important changes that are not intended to be hidden. This may happen if an attribute has a single value which is changed. This is because conditional ignored attributes will hide changes to the attribute both when the value is changed __to__ _as well as_ __from__ the ignored value; for example, if a user is a memberOf _cn=mailing-list-user,ou=Accessgroups,dc=mouse,dc=com_ which gets __changed__ to _cn=super-administrator,ou=Accessgroups,dc=mouse,dc=com_, it will be missed.
 2. Similar to #1, there is no real way to determine whether a change is really a change in some cases, or a removal and then addition at the same time. In theory, it doesn't really matter, however it's important to note.
-3. LDAP Watchdog polls rather than receiving changes as they happen: every `LDAP_WATCHDOG_REFRESH_RATE` seconds it retrieves all matching entries and compares them with the previous snapshot. A change made and undone between two polls is never reported, and the timestamp on each message is when the change was detected, not when it was made (which `modifyTimestamp` records).
+3. LDAP Watchdog polls rather than receiving changes as they happen: after each search it waits `LDAP_WATCHDOG_REFRESH_RATE` seconds, then retrieves all matching entries again and compares them with the previous snapshot. A change made and undone between two polls is never reported, and the timestamp on each message is when the change was detected, not when it was made (which `modifyTimestamp` records).
 
 
 ## Development
