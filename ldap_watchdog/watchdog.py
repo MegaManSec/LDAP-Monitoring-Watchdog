@@ -42,6 +42,7 @@ class VerifiedTls(Tls):
 
     def wrap_socket(self, connection, do_handshake=False):
         context = ssl.create_default_context(cafile=self.ca_certs_file)
+        context.verify_flags &= ~ssl.VERIFY_X509_STRICT
         connection.socket = context.wrap_socket(
             connection.socket, server_hostname=connection.server.host, do_handshake_on_connect=do_handshake,
         )
