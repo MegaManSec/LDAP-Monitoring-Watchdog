@@ -28,11 +28,11 @@ Note: in the below examples, changes to entryCSN and modifyTimestamp on existing
 
 ### Terminal (with color) output:
 
-![Example of the output from LDAP Watchdog](example.png "LDAP Watchdog")
+![Example of the output from LDAP Watchdog](https://raw.githubusercontent.com/MegaManSec/LDAP-Monitoring-Watchdog/main/example.png "LDAP Watchdog")
 
 ### Slack output:
 
-![Example of the output from LDAP Watchdog in Slack](example-slack.png "LDAP Watchdog")
+![Example of the output from LDAP Watchdog in Slack](https://raw.githubusercontent.com/MegaManSec/LDAP-Monitoring-Watchdog/main/example-slack.png "LDAP Watchdog")
 
 ## Features
 
@@ -124,7 +124,7 @@ docker run -d \
 
 ### Systemd Installation (Debian-based)
 
-A Debian-based installation script, [install.sh](install.sh), is provided. When run as root from a clone of this repository, this script:
+A Debian-based installation script, [install.sh](https://github.com/MegaManSec/LDAP-Monitoring-Watchdog/blob/main/install.sh), is provided. When run as root from a clone of this repository, this script:
 
 1. Creates (if necessary) a Python virtual environment in `/opt/ldap-watchdog`.
 2. Installs LDAP Watchdog from the clone into that virtual environment, with the dependency versions pinned in `requirements.txt`.
@@ -243,4 +243,4 @@ python -m unittest discover -s tests
 `requirements.txt` pins every dependency for the Docker image and `install.sh`. After changing the dependencies in `setup.py`, regenerate it with `pip-compile --extra=slack --output-file=requirements.txt setup.py`.
 
 ## License
-This project is licensed under [GPL3.0](/LICENSE).
+This project is licensed under [GPL3.0](https://github.com/MegaManSec/LDAP-Monitoring-Watchdog/blob/main/LICENSE).
