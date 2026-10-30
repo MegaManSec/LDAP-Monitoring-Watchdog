@@ -1,4 +1,5 @@
 import copy
+import importlib
 import io
 import json
 import os
@@ -286,6 +287,13 @@ class TLSTests(unittest.TestCase):
         for certificate, host in (('ldap.example.com.pem', 'localhost'), ('localhost.pem', '127.0.0.1')):
             with self.subTest(certificate=certificate, host=host):
                 self.assertEqual(len(self.requests_received(certificate, host, None, verify=False)), 1)
+
+    def test_empty_verification_setting_keeps_the_default(self):
+        self.addCleanup(importlib.reload, config)
+        for value, verify in (('', True), ('false', False)):
+            with self.subTest(value=value), patch.dict(os.environ, {'LDAP_WATCHDOG_TLS_VERIFY': value}):
+                importlib.reload(config)
+                self.assertIs(config.LDAP_TLS_VERIFY, verify)
 
 
 class NetworkTests(unittest.TestCase):

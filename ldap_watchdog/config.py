@@ -27,12 +27,12 @@ CONTROL_USER_ATTRIBUTE = os.getenv('LDAP_WATCHDOG_CONTROL_USER_ATTRIBUTE', '')
 LDAP_SERVER = os.getenv('LDAP_WATCHDOG_SERVER', '')
 LDAP_USERNAME = os.getenv('LDAP_WATCHDOG_USERNAME', '')
 LDAP_PASSWORD = os.getenv('LDAP_WATCHDOG_PASSWORD', '')
-LDAP_USE_SSL = _parse_bool(os.getenv('LDAP_WATCHDOG_USE_SSL', 'true'))
+LDAP_USE_SSL = _parse_bool(os.getenv('LDAP_WATCHDOG_USE_SSL') or 'true')
 LDAP_CA_CERTS_FILE = os.getenv('LDAP_WATCHDOG_CA_CERTS_FILE') or None
-LDAP_TLS_VERIFY = _parse_bool(os.getenv('LDAP_WATCHDOG_TLS_VERIFY', 'true'))
+LDAP_TLS_VERIFY = _parse_bool(os.getenv('LDAP_WATCHDOG_TLS_VERIFY') or 'true')
 BASE_DN = os.getenv('LDAP_WATCHDOG_BASE_DN', '')
 
-DISABLE_COLOR_OUTPUT = _parse_bool(os.getenv('LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT', 'false'))
+DISABLE_COLOR_OUTPUT = _parse_bool(os.getenv('LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT') or 'false')
 
 SEARCH_FILTER = os.getenv('LDAP_WATCHDOG_SEARCH_FILTER', '(&(|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))')
 SEARCH_ATTRIBUTE = _parse_list(os.getenv('LDAP_WATCHDOG_SEARCH_ATTRIBUTE', '*,+'))
