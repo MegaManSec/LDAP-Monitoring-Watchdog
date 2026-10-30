@@ -18,7 +18,7 @@ If you're interesting in any of the following, then LDAP Watchdog is for you:
 
 In addition to monitoring for modifications, additions, and removals in an LDAP directory, it can be configured to ignore specific attributes, or even fine-tuned to ignore fine-grained attributes depending on their old/new values.
 
-The changes that are monitored can either be forwarded to a slack webhook or output to the terminal (or both). Optional colored output is also supported.
+Changes are always printed to the terminal, and are also forwarded to a Slack webhook if one is configured. Colored output can be turned off.
 
 Previously named LDAP-Stalker (because monitoring changes of an LDAP directory is an excellent way to stalk changes in a company: learn about promotions before they're announced, new hires, leavers, etc.), a blog post about the details and history of this project [can be found here](https://joshua.hu/ldap-watchdog-openldap-python-monitoring-tool-realtime-directory-slack-notifications).
 
@@ -119,6 +119,7 @@ docker run -d \
   -e LDAP_WATCHDOG_PASSWORD='qwerty123' \
   -e SLACK_WEBHOOK_URL='https://hooks.slack.com/services/[...]' \
   -e LDAP_WATCHDOG_IGNORED_ATTRIBUTES='entryCSN,modifyTimestamp,telephoneNumber,roomNumber,gecos' \
+  -e LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT='true' \
   megamansec/ldap-monitor
 ```
 
@@ -164,7 +165,7 @@ All configuration is done via environment variables. The following variables are
 | `LDAP_WATCHDOG_SEARCH_ATTRIBUTE` | Comma-separated list of attributes to retrieve. [`*,+`](https://joshua.hu/tracking-secret-ldap-login-times-with-modifytimestamp-heuristics) is used by default to include operational attributes. `entryUUID` is always requested and must be readable for every entry. | `*,+` |
 | `LDAP_WATCHDOG_REFRESH_RATE` | Whole number of seconds to wait after each LDAP search before the next one | `60` |
 | `LDAP_WATCHDOG_NETWORK_TIMEOUT` | Positive integer timeout in seconds for LDAP and Slack connection/read operations. This limits individual waits, not the total duration of a poll. | `30` |
-| `LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT` | Set to `true` to disable colored terminal output | `false` |
+| `LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT` | Set to `true` to disable colored output, which is used even when output goes to a file or `docker logs` | `false` |
 
 Boolean settings treat `true`, `1` and `yes` (in any case) as true and any other value as false; an empty value means the default.
 
@@ -186,7 +187,7 @@ A failed control check logs an error and skips that comparison. The next poll co
 | `SLACK_WEBHOOK_URL` | Slack Webhook URL for notifications. Requires the `slack` extra (`pip install LDAP-Monitor[slack]`). | Unset |
 | `LDAP_WATCHDOG_SLACK_BULLETPOINT` | Text that starts each line of changes in Slack and console output | &bull; with one space before and three after |
 
-Slack delivery is best effort: HTTP and network failures are logged to stderr, and monitoring and console output continue. Failed notifications are not queued or retried.
+Slack delivery is best effort: HTTP and network failures are logged to stderr, and monitoring and console output continue. Failed notifications are not queued or retried. Messages longer than 4,000 characters are shortened by replacing their longest words with `[...truncated...]`; console output is never shortened.
 
 ### Ignored Entries and Attributes
 
