@@ -1,12 +1,27 @@
 # This file is an original work developed by Joshua Rogers<https://joshua.hu/>.
-# Licensed under the GPL3.0 License.
+# Licensed under the GPL-3.0-or-later License.
 
 import json
 import os
 
 
-def _parse_bool(val):
-    return val.lower() in ('true', '1', 'yes')
+def _parse_bool(name, default):
+    raw = os.getenv(name, '')
+    val = raw.strip()
+    if len(val) > 1 and val[0] == val[-1] and val[0] in '"\'':
+        val = val[1:-1].strip()
+    val = val.lower()
+    if not val:
+        return default
+    if val in ('true', '1', 'yes', 'on'):
+        return True
+    if val in ('false', '0', 'no', 'off'):
+        return False
+    raise ValueError(f'{name} must be true/false, 1/0, yes/no or on/off, not {raw!r}')
+
+
+def _setting(name, default):
+    return os.getenv(name, '').strip() or default
 
 
 def _parse_list(val):
@@ -27,18 +42,18 @@ CONTROL_USER_ATTRIBUTE = os.getenv('LDAP_WATCHDOG_CONTROL_USER_ATTRIBUTE', '')
 LDAP_SERVER = os.getenv('LDAP_WATCHDOG_SERVER', '')
 LDAP_USERNAME = os.getenv('LDAP_WATCHDOG_USERNAME', '')
 LDAP_PASSWORD = os.getenv('LDAP_WATCHDOG_PASSWORD', '')
-LDAP_USE_SSL = _parse_bool(os.getenv('LDAP_WATCHDOG_USE_SSL', 'true'))
+LDAP_USE_SSL = _parse_bool('LDAP_WATCHDOG_USE_SSL', True)
 LDAP_CA_CERTS_FILE = os.getenv('LDAP_WATCHDOG_CA_CERTS_FILE') or None
-LDAP_TLS_VERIFY = _parse_bool(os.getenv('LDAP_WATCHDOG_TLS_VERIFY', 'true'))
+LDAP_TLS_VERIFY = _parse_bool('LDAP_WATCHDOG_TLS_VERIFY', True)
 BASE_DN = os.getenv('LDAP_WATCHDOG_BASE_DN', '')
 
-DISABLE_COLOR_OUTPUT = _parse_bool(os.getenv('LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT', 'false'))
+DISABLE_COLOR_OUTPUT = _parse_bool('LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT', False)
 
-SEARCH_FILTER = os.getenv('LDAP_WATCHDOG_SEARCH_FILTER', '(&(|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))')
-SEARCH_ATTRIBUTE = _parse_list(os.getenv('LDAP_WATCHDOG_SEARCH_ATTRIBUTE', '*,+'))
+SEARCH_FILTER = _setting('LDAP_WATCHDOG_SEARCH_FILTER', '(&(|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))')
+SEARCH_ATTRIBUTE = _parse_list(_setting('LDAP_WATCHDOG_SEARCH_ATTRIBUTE', '*,+'))
 
-REFRESH_RATE = int(os.getenv('LDAP_WATCHDOG_REFRESH_RATE', '60'))
-NETWORK_TIMEOUT = int(os.getenv('LDAP_WATCHDOG_NETWORK_TIMEOUT', '30'))
+REFRESH_RATE = int(_setting('LDAP_WATCHDOG_REFRESH_RATE', '60'))
+NETWORK_TIMEOUT = int(_setting('LDAP_WATCHDOG_NETWORK_TIMEOUT', '30'))
 if NETWORK_TIMEOUT <= 0:
     raise ValueError('LDAP_WATCHDOG_NETWORK_TIMEOUT must be greater than zero')
 

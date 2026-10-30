@@ -1,4 +1,5 @@
 import copy
+import importlib
 import io
 import json
 import os
@@ -286,6 +287,53 @@ class TLSTests(unittest.TestCase):
         for certificate, host in (('ldap.example.com.pem', 'localhost'), ('localhost.pem', '127.0.0.1')):
             with self.subTest(certificate=certificate, host=host):
                 self.assertEqual(len(self.requests_received(certificate, host, None, verify=False)), 1)
+
+
+class ConfigTests(unittest.TestCase):
+    BOOLEANS = (
+        ('LDAP_WATCHDOG_USE_SSL', 'LDAP_USE_SSL', True),
+        ('LDAP_WATCHDOG_TLS_VERIFY', 'LDAP_TLS_VERIFY', True),
+        ('LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT', 'DISABLE_COLOR_OUTPUT', False),
+    )
+
+    def setUp(self):
+        self.addCleanup(importlib.reload, config)
+
+    def load(self, **environ):
+        with patch.dict(os.environ, environ):
+            importlib.reload(config)
+
+    def test_booleans_accept_common_spellings_and_default_when_empty(self):
+        for variable, attribute, default in self.BOOLEANS:
+            for value, expected in (
+                ('', default), ('  ', default), ('""', default), ('" "', default),
+                ('true', True), ('TRUE', True), (' yes ', True), ('"1"', True), ("'on'", True), ('" true "', True),
+                ('false', False), ('Off', False), ('"no"', False), ('0 ', False),
+            ):
+                with self.subTest(variable=variable, value=value):
+                    self.load(**{variable: value})
+                    self.assertIs(getattr(config, attribute), expected)
+
+    def test_unrecognized_booleans_are_rejected(self):
+        for variable, _, _ in self.BOOLEANS:
+            for value in ('enabled', 'ture', '"true', '\'true"'):
+                with self.subTest(variable=variable, value=value):
+                    with self.assertRaises(ValueError) as raised:
+                        self.load(**{variable: value})
+                    self.assertIn(variable, str(raised.exception))
+                    self.assertIn(repr(value), str(raised.exception))
+
+    def test_empty_settings_use_their_defaults(self):
+        for value in ('', '  '):
+            with self.subTest(value=value):
+                self.load(**dict.fromkeys((
+                    'LDAP_WATCHDOG_SEARCH_FILTER', 'LDAP_WATCHDOG_SEARCH_ATTRIBUTE',
+                    'LDAP_WATCHDOG_REFRESH_RATE', 'LDAP_WATCHDOG_NETWORK_TIMEOUT',
+                ), value))
+                self.assertEqual(
+                    (config.SEARCH_FILTER, config.SEARCH_ATTRIBUTE, config.REFRESH_RATE, config.NETWORK_TIMEOUT),
+                    ('(&(|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))', ['*', '+'], 60, 30),
+                )
 
 
 class NetworkTests(unittest.TestCase):
