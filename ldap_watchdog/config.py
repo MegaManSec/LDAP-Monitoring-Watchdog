@@ -29,6 +29,7 @@ LDAP_USERNAME = os.getenv('LDAP_WATCHDOG_USERNAME', '')
 LDAP_PASSWORD = os.getenv('LDAP_WATCHDOG_PASSWORD', '')
 LDAP_USE_SSL = _parse_bool(os.getenv('LDAP_WATCHDOG_USE_SSL', 'true'))
 LDAP_CA_CERTS_FILE = os.getenv('LDAP_WATCHDOG_CA_CERTS_FILE') or None
+LDAP_TLS_VERIFY = _parse_bool(os.getenv('LDAP_WATCHDOG_TLS_VERIFY', 'true'))
 BASE_DN = os.getenv('LDAP_WATCHDOG_BASE_DN', '')
 
 DISABLE_COLOR_OUTPUT = _parse_bool(os.getenv('LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT', 'false'))

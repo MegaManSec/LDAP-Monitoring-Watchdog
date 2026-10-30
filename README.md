@@ -159,13 +159,14 @@ All configuration is done via environment variables. The following variables are
 | `LDAP_WATCHDOG_PASSWORD` | LDAP password for authentication. Leave empty for anonymous bind. | `""` |
 | `LDAP_WATCHDOG_USE_SSL` | Set to `true` to use SSL, `false` otherwise | `true` |
 | `LDAP_WATCHDOG_CA_CERTS_FILE` | Optional PEM CA bundle for verifying the LDAP server certificate. If unset, system trust roots are used. | Unset |
+| `LDAP_WATCHDOG_TLS_VERIFY` | Set to `false` to skip verifying the LDAP server certificate and host name. The connection is still encrypted but not authenticated. | `true` |
 | `LDAP_WATCHDOG_SEARCH_FILTER` | LDAP filter for user and group entries | `(&(&#124;(objectClass=inetOrgPerson)(objectClass=groupOfNames)))` |
 | `LDAP_WATCHDOG_SEARCH_ATTRIBUTE` | Comma-separated list of attributes to retrieve. [`*,+`](https://joshua.hu/tracking-secret-ldap-login-times-with-modifytimestamp-heuristics) is used by default to include operational attributes. `entryUUID` is always requested and must be readable for every entry. | `*,+` |
 | `LDAP_WATCHDOG_REFRESH_RATE` | Time interval in seconds between consecutive LDAP searches | `60` |
 | `LDAP_WATCHDOG_NETWORK_TIMEOUT` | Positive integer timeout in seconds for LDAP and Slack connection/read operations. This limits individual waits, not the total duration of a poll. | `30` |
 | `LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT` | Set to `true` to disable colored terminal output | `false` |
 
-LDAPS connections verify the server certificate and check that it is valid for the host name or IP address in `LDAP_WATCHDOG_SERVER`. For a private CA, set `LDAP_WATCHDOG_CA_CERTS_FILE` to a readable PEM CA bundle; in Docker, mount the bundle into the container and use its container path.
+LDAPS connections verify the server certificate and check that it is valid for the host name or IP address in `LDAP_WATCHDOG_SERVER`. For a private CA, set `LDAP_WATCHDOG_CA_CERTS_FILE` to a readable PEM CA bundle; in Docker, mount the bundle into the container and use its container path. A self-signed server certificate can be used as the bundle itself. If the certificate can't be provided or doesn't match the server's name, `LDAP_WATCHDOG_TLS_VERIFY=false` turns verification off; anyone on the network path can then impersonate the server and capture the bind password. For a server without TLS, use an `ldap://` URL or set `LDAP_WATCHDOG_USE_SSL=false`.
 
 ### Control User
 
