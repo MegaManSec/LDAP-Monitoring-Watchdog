@@ -239,7 +239,7 @@ class TLSTests(unittest.TestCase):
         self.assertTrue(server.ssl)
         self.assertEqual(server.tls.validate, ssl.CERT_REQUIRED)
 
-    def requests_received(self, certificate, host, ca_certs_file):
+    def requests_received(self, certificate, host, ca_certs_file, verify=True):
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.load_cert_chain(os.path.join(CERTS, certificate))
         server_names, received = [], []
@@ -262,7 +262,7 @@ class TLSTests(unittest.TestCase):
         server.start()
         with patch.multiple(config, LDAP_SERVER=f'ldaps://{host}:{listener.getsockname()[1]}',
                             LDAP_CA_CERTS_FILE=ca_certs_file and os.path.join(CERTS, ca_certs_file),
-                            LDAP_USERNAME='', LDAP_PASSWORD='', NETWORK_TIMEOUT=5):
+                            LDAP_TLS_VERIFY=verify, LDAP_USERNAME='', LDAP_PASSWORD='', NETWORK_TIMEOUT=5):
             with self.assertRaises(LDAPException):
                 watchdog.retrieve_ldap()
         server.join()
@@ -281,6 +281,11 @@ class TLSTests(unittest.TestCase):
         ):
             with self.subTest(certificate=certificate, host=host, ca_certs_file=ca_certs_file):
                 self.assertEqual(self.requests_received(certificate, host, ca_certs_file), [])
+
+    def test_verification_can_be_turned_off(self):
+        for certificate, host in (('ldap.example.com.pem', 'localhost'), ('localhost.pem', '127.0.0.1')):
+            with self.subTest(certificate=certificate, host=host):
+                self.assertEqual(len(self.requests_received(certificate, host, None, verify=False)), 1)
 
 
 class NetworkTests(unittest.TestCase):

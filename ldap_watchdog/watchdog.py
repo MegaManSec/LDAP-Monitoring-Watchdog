@@ -56,10 +56,13 @@ def retrieve_ldap():
     - dict: Dictionary containing LDAP entries.
     """
     entries = {}
+    if config.LDAP_TLS_VERIFY:
+        tls = VerifiedTls(validate=ssl.CERT_REQUIRED, ca_certs_file=config.LDAP_CA_CERTS_FILE)
+    else:
+        tls = Tls(validate=ssl.CERT_NONE)
     server = Server(
         config.LDAP_SERVER, use_ssl=config.LDAP_USE_SSL, get_info=ALL,
-        tls=VerifiedTls(validate=ssl.CERT_REQUIRED, ca_certs_file=config.LDAP_CA_CERTS_FILE),
-        connect_timeout=config.NETWORK_TIMEOUT,
+        tls=tls, connect_timeout=config.NETWORK_TIMEOUT,
     )
     if config.LDAP_USERNAME and config.LDAP_PASSWORD:
         conn = Connection(server, user=config.LDAP_USERNAME, password=config.LDAP_PASSWORD,
