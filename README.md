@@ -160,7 +160,7 @@ All configuration is done via environment variables. The following variables are
 | `LDAP_WATCHDOG_USE_SSL` | Set to `true` to use SSL, `false` otherwise | `true` |
 | `LDAP_WATCHDOG_CA_CERTS_FILE` | Optional PEM CA bundle for verifying the LDAP server certificate. If unset, system trust roots are used. | Unset |
 | `LDAP_WATCHDOG_TLS_VERIFY` | Set to `false` to skip verifying the LDAP server certificate and host name. The connection is still encrypted but not authenticated. | `true` |
-| `LDAP_WATCHDOG_SEARCH_FILTER` | LDAP filter for user and group entries | `(&(&#124;(objectClass=inetOrgPerson)(objectClass=groupOfNames)))` |
+| `LDAP_WATCHDOG_SEARCH_FILTER` | LDAP filter for user and group entries | `(&(\|(objectClass=inetOrgPerson)(objectClass=groupOfNames)))` |
 | `LDAP_WATCHDOG_SEARCH_ATTRIBUTE` | Comma-separated list of attributes to retrieve. [`*,+`](https://joshua.hu/tracking-secret-ldap-login-times-with-modifytimestamp-heuristics) is used by default to include operational attributes. `entryUUID` is always requested and must be readable for every entry. | `*,+` |
 | `LDAP_WATCHDOG_REFRESH_RATE` | Time interval in seconds between consecutive LDAP searches | `60` |
 | `LDAP_WATCHDOG_NETWORK_TIMEOUT` | Positive integer timeout in seconds for LDAP and Slack connection/read operations. This limits individual waits, not the total duration of a poll. | `30` |
@@ -183,8 +183,8 @@ A failed control check logs an error and skips that comparison. The next poll co
 
 | Environment Variable | Description | Default |
 |---|---|---|
-| `SLACK_WEBHOOK_URL` | Slack Webhook URL for notifications. Requires the `slack` extra (`pip install LDAP-Monitor[slack]`). | `None` |
-| `LDAP_WATCHDOG_SLACK_BULLETPOINT` | Bullet point character used in Slack and console output | ` \u2022   ` |
+| `SLACK_WEBHOOK_URL` | Slack Webhook URL for notifications. Requires the `slack` extra (`pip install LDAP-Monitor[slack]`). | Unset |
+| `LDAP_WATCHDOG_SLACK_BULLETPOINT` | Text that starts each line of changes in Slack and console output | &bull; with one space before and three after |
 
 Slack delivery is best effort: HTTP and network failures are logged to stderr, and monitoring and console output continue. Failed notifications are not queued or retried.
 
@@ -232,7 +232,7 @@ ldap-watchdog
 ```
 
 ## Limitations
-1. The _LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES_ configuration may unfortunately hide important changes that are not intended to be hidden. This may happen if an attribute has a single value which is changed. This is because conditional ignored attributes will hide changes to the attribute both when the value is changed __to__ _as well as_ __from__ the ignored value; for example, if a user is a memberOf _cn=mailing-list-user,ou=Accessgroups,dc=mouse,dc=com_ which gets __changed__ to _cn=super-administrator,ou=Accessgroups,dc=mouse,dc=com_, it will be missed.
+1. The `LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES` configuration may unfortunately hide important changes that are not intended to be hidden. This may happen if an attribute has a single value which is changed. This is because conditional ignored attributes will hide changes to the attribute both when the value is changed __to__ _as well as_ __from__ the ignored value; for example, if a user is a memberOf _cn=mailing-list-user,ou=Accessgroups,dc=mouse,dc=com_ which gets __changed__ to _cn=super-administrator,ou=Accessgroups,dc=mouse,dc=com_, it will be missed.
 2. Similar to #1, there is no real way to determine whether a change is really a change in some cases, or a removal and then addition in the same time. In theory, it doesn't really matter, however it's important to note.
 
 
