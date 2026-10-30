@@ -197,7 +197,7 @@ Slack delivery is best effort: HTTP and network failures are logged to stderr, a
 
 ### Ignored Entries and Attributes
 
-These filters apply to attribute changes on entries present in both snapshots. Entry additions and deletions are always announced with all retrieved attributes, including for ignored UUIDs. UUIDs are `entryUUID` values, shown in parentheses after the DN in each message, and names and values must match exactly, including case (`modifyTimestamp`, not `modifytimestamp`). Each ignored change is still written to stderr with its values.
+These filters apply to attribute changes on entries present in both snapshots. Entry additions and deletions are always announced with all retrieved attributes, including for ignored UUIDs. UUIDs are `entryUUID` values, shown in parentheses after the DN in each message, and names and values must match exactly, including case (`modifyTimestamp`, not `modifytimestamp`). Changes hidden by `LDAP_WATCHDOG_IGNORED_ATTRIBUTES` or `LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES` are still written to stderr with their values; those of ignored UUIDs are skipped silently.
 
 | Environment Variable | Description | Default |
 |---|---|---|
