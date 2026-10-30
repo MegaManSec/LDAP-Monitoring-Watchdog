@@ -91,9 +91,11 @@ cd LDAP-Monitoring-Watchdog
 pip install ".[slack]"
 ```
 
-### Upgrading from 1.x
+### Upgrading
 
-Since 2.0.0, LDAPS connections verify the server certificate and that it matches the host name or IP address in `LDAP_WATCHDOG_SERVER`; 1.0.0 checked neither. Before upgrading, set `LDAP_WATCHDOG_CA_CERTS_FILE` if the certificate is self-signed or from a private CA, and if it does not match that name, use a matching certificate or set `LDAP_WATCHDOG_TLS_VERIFY=false` (see the TLS notes under [Configuration](#configuration)). The [release notes](https://github.com/MegaManSec/LDAP-Monitoring-Watchdog/releases/tag/v2.0.0) list the other changes.
+**From 1.x:** Since 2.0.0, LDAPS connections verify the server certificate and that it matches the host name or IP address in `LDAP_WATCHDOG_SERVER`; 1.0.0 checked neither. Before upgrading, set `LDAP_WATCHDOG_CA_CERTS_FILE` if the certificate is self-signed or from a private CA, and if it does not match that name, use a matching certificate or set `LDAP_WATCHDOG_TLS_VERIFY=false` (see the TLS notes under [Configuration](#configuration)). The [release notes](https://github.com/MegaManSec/LDAP-Monitoring-Watchdog/releases/tag/v2.0.0) list the other changes.
+
+**From 1.x or 2.0.0:** Since 2.0.1, boolean settings only accept the values listed under [Configuration](#configuration). Earlier versions read anything other than `true`, `1` or `yes` as false. Now an unrecognized value stops the process at startup, an empty value means the default, and `on` or a quoted `"true"` means true. For example, an empty `LDAP_WATCHDOG_USE_SSL` with a bare host name now connects with LDAPS on port 636 instead of plain LDAP on port 389.
 
 ## Usage
 
