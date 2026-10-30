@@ -193,7 +193,7 @@ A failed control check logs an error and skips that comparison. The next poll co
 | `SLACK_WEBHOOK_URL` | Slack Webhook URL for notifications. Requires the `slack` extra (`pip install "LDAP-Monitor[slack]"`). | Unset |
 | `LDAP_WATCHDOG_SLACK_BULLETPOINT` | Text that starts each line of changes in Slack and console output | &bull; with one space before and three after |
 
-Slack delivery is best effort: HTTP and network failures are logged to stderr, and monitoring and console output continue. Failed notifications are not queued or retried. Messages longer than 4,000 characters are shortened by replacing their longest words with `[...truncated...]`; console output is never shortened.
+Slack delivery is best effort: HTTP and network failures are logged to stderr, and monitoring and console output continue. Failed notifications are not queued or retried. Messages longer than 4,000 characters are shortened by replacing their longest words with `[...truncated...]`; if that is not enough, they are cut at 4,000 characters, dropping their last lines (additions are listed first, then removals, then modifications). Console output is never shortened.
 
 ### Ignored Entries and Attributes
 
