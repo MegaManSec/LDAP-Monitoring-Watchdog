@@ -174,7 +174,7 @@ LDAPS connections verify the server certificate and check that it is valid for t
 
 | Environment Variable | Description | Default |
 |---|---|---|
-| `LDAP_WATCHDOG_CONTROL_UUID` | UUID of a control user whose changes trigger an error if not found. If set, this user should always have some type of change when the LDAP directory is retrieved. | `""` |
+| `LDAP_WATCHDOG_CONTROL_UUID` | `entryUUID` of a control user that is changed (e.g. by a cron job) before every poll. Unless one of its attributes present in both snapshots has a new value, the comparison is rejected with an error. The user must match the base DN and search filter, and its changes are announced unless it is also in `LDAP_WATCHDOG_IGNORED_UUIDS`. | `""` |
 | `LDAP_WATCHDOG_CONTROL_USER_ATTRIBUTE` | Specific attribute to check in the control user. If set, it must exist in both snapshots and its value must differ. | `""` |
 
 A failed control check logs an error and skips that comparison. The next poll compares against the most recent successfully retrieved snapshot; changes from a rejected comparison are not replayed. A failed LDAP retrieval instead preserves the previous snapshot and is retried on the next poll. Failure to retrieve the initial snapshot stops the process.
@@ -225,7 +225,7 @@ export LDAP_WATCHDOG_TLS_VERIFY='true'
 export LDAP_WATCHDOG_REFRESH_RATE='60'
 export LDAP_WATCHDOG_NETWORK_TIMEOUT='30'
 export LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT='false'
-export LDAP_WATCHDOG_IGNORED_UUIDS='e191c564-6e6d-42c1-ae51-bda0509fe846,8655e0d9-ecdc-46ce-ba42-1fa3dfbf5faa'
+export LDAP_WATCHDOG_IGNORED_UUIDS='a71c6e4c-8881-4a03-95bf-4fc25d5e6359,e191c564-6e6d-42c1-ae51-bda0509fe846,8655e0d9-ecdc-46ce-ba42-1fa3dfbf5faa'
 export LDAP_WATCHDOG_IGNORED_ATTRIBUTES='entryCSN,modifyTimestamp,telephoneNumber,roomNumber,gecos'
 export LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES='{"objectClass":["posixAccount"],"memberOf":["cn=mailing-list-user,ou=Accessgroups,dc=mouse,dc=com","cn=interns,ou=Accessgroups,dc=mouse,dc=com"],"organizationalStatus":["researcher"]}'
 export SLACK_WEBHOOK_URL='https://hooks.slack.com/services/[...]'
