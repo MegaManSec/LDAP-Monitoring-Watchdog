@@ -68,7 +68,7 @@ pip install LDAP-Monitor
 To include Slack webhook support:
 
 ```bash
-pip install LDAP-Monitor[slack]
+pip install "LDAP-Monitor[slack]"
 ```
 
 ### Docker
@@ -91,6 +91,10 @@ cd LDAP-Monitoring-Watchdog
 pip install ".[slack]"
 ```
 
+### Upgrading from 1.x
+
+Since 2.0.0, LDAPS connections verify the server certificate, which 1.0.0 did not, so set `LDAP_WATCHDOG_CA_CERTS_FILE` before upgrading if the certificate is self-signed or from a private CA. The [release notes](https://github.com/MegaManSec/LDAP-Monitoring-Watchdog/releases/tag/v2.0.0) list the other changes.
+
 ## Usage
 
 ### Running with pip install
@@ -112,7 +116,7 @@ python -m ldap_watchdog
 ### Running with Docker
 
 ```bash
-docker run -d \
+docker run -d --restart unless-stopped \
   -e LDAP_WATCHDOG_SERVER='ldaps://ldaps.intra.lan' \
   -e LDAP_WATCHDOG_BASE_DN='dc=mouse,dc=com' \
   -e LDAP_WATCHDOG_USERNAME='cn=Emily,ou=People,dc=mouse,dc=com' \
@@ -125,22 +129,24 @@ docker run -d \
 
 ### Systemd Installation (Debian-based)
 
-A Debian-based installation script, [install.sh](https://github.com/MegaManSec/LDAP-Monitoring-Watchdog/blob/main/install.sh), is provided. When run as root from a clone of this repository, this script:
+A Debian-based installation script, [install.sh](https://github.com/MegaManSec/LDAP-Monitoring-Watchdog/blob/main/install.sh), is provided. It needs Python 3.10 or later and the `python3-venv` package. When run as root from a clone of this repository, this script:
 
 1. Creates (if necessary) a Python virtual environment in `/opt/ldap-watchdog`.
 2. Installs LDAP Watchdog from the clone into that virtual environment, with the dependency versions pinned in `requirements.txt`.
-3. Creates an environment file at `/etc/ldap-watchdog.env` for configuration.
-4. Installs and enables a systemd service (`/etc/systemd/system/ldap-watchdog.service`) that runs **ldap-watchdog** in the background.
+3. Creates an environment file at `/etc/ldap-watchdog.env` for configuration, unless one already exists.
+4. Installs, enables and starts a systemd service (`/etc/systemd/system/ldap-watchdog.service`) that runs **ldap-watchdog** in the background as an unprivileged dynamic user, so a CA bundle must be world-readable.
 5. Configures logging to `/var/log/ldap-watchdog.log` and `/var/log/ldap-watchdog-error.log`.
 6. Sets up log rotation in `/etc/logrotate.d/ldap-watchdog`.
 
-You may optionally pass a single argument to `install.sh` to set the `SLACK_WEBHOOK_URL`:
+Rerunning the script from an updated clone upgrades the installation.
+
+You may optionally pass a single argument to `install.sh` to set the `SLACK_WEBHOOK_URL` when the environment file is first created:
 
 ```bash
 sudo ./install.sh "https://hooks.slack.com/services/[...]"
 ```
 
-After installation, edit `/etc/ldap-watchdog.env` to configure the LDAP connection settings, then restart the service:
+After installation, edit `/etc/ldap-watchdog.env` to configure the LDAP connection settings (the service fails until then), then restart the service:
 
 ```bash
 sudo systemctl restart ldap-watchdog
@@ -184,7 +190,7 @@ A failed control check logs an error and skips that comparison. The next poll co
 
 | Environment Variable | Description | Default |
 |---|---|---|
-| `SLACK_WEBHOOK_URL` | Slack Webhook URL for notifications. Requires the `slack` extra (`pip install LDAP-Monitor[slack]`). | Unset |
+| `SLACK_WEBHOOK_URL` | Slack Webhook URL for notifications. Requires the `slack` extra (`pip install "LDAP-Monitor[slack]"`). | Unset |
 | `LDAP_WATCHDOG_SLACK_BULLETPOINT` | Text that starts each line of changes in Slack and console output | &bull; with one space before and three after |
 
 Slack delivery is best effort: HTTP and network failures are logged to stderr, and monitoring and console output continue. Failed notifications are not queued or retried. Messages longer than 4,000 characters are shortened by replacing their longest words with `[...truncated...]`; console output is never shortened.
