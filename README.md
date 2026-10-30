@@ -3,8 +3,8 @@
 ## Overview
 LDAP Watchdog is a tool designed to monitor record changes in an LDAP directory in real-time.
 It provides a mechanism to track and visualize modifications, additions, and removals to user and group entries, allowing users to correlate expected changes with actual changes and identify potential security incidents.
-It was created with OpenLDAP and Linux in mind, however it may work in other implementations of LDAP.
-It is written in Python and only requires the ldap3 library.
+It was created with OpenLDAP and Linux in mind, and needs a server that gives every entry an `entryUUID` (RFC 4530), so Active Directory, which uses `objectGUID` instead, is not supported.
+It is written in Python and requires the ldap3 library, plus requests for Slack notifications.
 
 This software was written by [Joshua Rogers](https://joshua.hu/).
 
@@ -243,6 +243,7 @@ ldap-watchdog
 ## Limitations
 1. The `LDAP_WATCHDOG_CONDITIONAL_IGNORED_ATTRIBUTES` configuration may unfortunately hide important changes that are not intended to be hidden. This may happen if an attribute has a single value which is changed. This is because conditional ignored attributes will hide changes to the attribute both when the value is changed __to__ _as well as_ __from__ the ignored value; for example, if a user is a memberOf _cn=mailing-list-user,ou=Accessgroups,dc=mouse,dc=com_ which gets __changed__ to _cn=super-administrator,ou=Accessgroups,dc=mouse,dc=com_, it will be missed.
 2. Similar to #1, there is no real way to determine whether a change is really a change in some cases, or a removal and then addition in the same time. In theory, it doesn't really matter, however it's important to note.
+3. LDAP Watchdog polls rather than receiving changes as they happen: every `LDAP_WATCHDOG_REFRESH_RATE` seconds it retrieves all matching entries and compares them with the previous snapshot. A change made and undone between two polls is never reported, and the timestamp on each message is when the change was detected, not when it was made (which `modifyTimestamp` records).
 
 
 ## Development
