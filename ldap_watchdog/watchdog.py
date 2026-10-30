@@ -4,12 +4,15 @@
 # Licensed under the GPL3.0 License.  You should have received a copy of the GNU General Public License along with LDAP Watchdog. If not, see <https://www.gnu.org/licenses/>.
 
 import json
+import re
+import ssl
 import sys
+from collections import Counter
 from datetime import datetime
 import time
 
-from ldap3 import Server, Connection, ALL, SUBTREE
-from ldap3.core.exceptions import LDAPSocketOpenError
+from ldap3 import Server, Connection, Tls, ALL, SUBTREE
+from ldap3.core.exceptions import LDAPException
 
 from ldap_watchdog import config
 
@@ -32,6 +35,19 @@ def col(op_type):
     return {'add': "\033[1m\033[32m", 'delete': "\033[3m\033[31m", 'modify': "\033[33m"}[op_type]
 
 
+class VerifiedTls(Tls):
+    """
+    ldap3 TLS settings that verify the server certificate and hostname with the ssl module's default context.
+    """
+
+    def wrap_socket(self, connection, do_handshake=False):
+        context = ssl.create_default_context(cafile=self.ca_certs_file)
+        context.verify_flags &= ~ssl.VERIFY_X509_STRICT
+        connection.socket = context.wrap_socket(
+            connection.socket, server_hostname=connection.server.host, do_handshake_on_connect=do_handshake,
+        )
+
+
 def retrieve_ldap():
     """
     Connects to the LDAP server and retrieves LDAP entries.
@@ -40,33 +56,54 @@ def retrieve_ldap():
     - dict: Dictionary containing LDAP entries.
     """
     entries = {}
-    server = Server(config.LDAP_SERVER, use_ssl=config.LDAP_USE_SSL, get_info=ALL)
+    server = Server(
+        config.LDAP_SERVER, use_ssl=config.LDAP_USE_SSL, get_info=ALL,
+        tls=VerifiedTls(validate=ssl.CERT_REQUIRED, ca_certs_file=config.LDAP_CA_CERTS_FILE),
+        connect_timeout=config.NETWORK_TIMEOUT,
+    )
     if config.LDAP_USERNAME and config.LDAP_PASSWORD:
-        conn = Connection(server, user=config.LDAP_USERNAME, password=config.LDAP_PASSWORD)
-        if not conn.bind():
-            print('Error in bind:', conn.result, file=sys.stderr)
-            return entries
+        conn = Connection(server, user=config.LDAP_USERNAME, password=config.LDAP_PASSWORD,
+                          receive_timeout=config.NETWORK_TIMEOUT)
     else:
-        conn = Connection(server)
+        conn = Connection(server, receive_timeout=config.NETWORK_TIMEOUT)
+
+    try:
         if not conn.bind():
-            print('Anonymous bind failed:', conn.result, file=sys.stderr)
-            return entries
+            raise LDAPException(f"LDAP bind failed: {conn.result}")
 
-    conn.search(search_base=config.BASE_DN, search_filter=config.SEARCH_FILTER, search_scope=SUBTREE, attributes=config.SEARCH_ATTRIBUTE)
+        cookie = None
+        while True:
+            conn.search(
+                search_base=config.BASE_DN, search_filter=config.SEARCH_FILTER,
+                search_scope=SUBTREE, attributes=config.SEARCH_ATTRIBUTE + ['entryUUID'],
+                paged_size=500, paged_cookie=cookie,
+            )
+            # A successful search can return no entries; check the result code.
+            if conn.result['result'] != 0:
+                raise LDAPException(f"LDAP search failed: {conn.result}")
 
-    for entry in conn.entries:
-        entry = json.loads(entry.entry_to_json())
-        entry_dict = entry['attributes']
-        for attr_name, attr_value in entry_dict.items():
-            attr_value = attr_value[0]
-            # Some entries may be encoded using base64 and provided by a dictionary.
-            # In that case, replace the dictionary with a string of the encoded data.
-            if isinstance(attr_value, dict) and len(attr_value) == 2 and 'encoded' in attr_value and 'encoding' in attr_value and attr_value['encoding'] == 'base64':
-                decoded_value = attr_value['encoded']
-                entry_dict[attr_name] = decoded_value
+            for entry in conn.entries:
+                entry = json.loads(entry.entry_to_json())
+                entry_dict = entry['attributes']
+                for attr_name, values in entry_dict.items():
+                    # Keep every value, including binary data represented as Base64 by ldap3.
+                    entry_dict[attr_name] = [
+                        value['encoded']
+                        if isinstance(value, dict) and value.get('encoding') == 'base64'
+                        else value
+                        for value in values
+                    ]
 
-        entry_dict['dn'] = [entry['dn']]
-        entries[entry_dict['entryUUID'][0]] = entry_dict
+                entry_dict['dn'] = [entry['dn']]
+                if not entry_dict.get('entryUUID'):
+                    raise LDAPException(f"LDAP entry {entry['dn']} has no readable entryUUID")
+                entries[entry_dict['entryUUID'][0]] = entry_dict
+
+            cookie = conn.result.get('controls', {}).get('1.2.840.113556.1.4.319', {}).get('value', {}).get('cookie')
+            if not cookie:
+                break
+    finally:
+        conn.unbind()
 
     return entries
 
@@ -138,8 +175,8 @@ def announce(dn_uuid, op_type, changes):
     - None
     """
     slack_msg, print_msg = generate_message(dn_uuid, op_type, changes)
+    print(print_msg, flush=True)
     send_to_slack(slack_msg)
-    print(print_msg)
 
 
 def truncate_slack_message(message):
@@ -152,10 +189,23 @@ def truncate_slack_message(message):
     Returns:
     - str: Truncated Slack message.
     """
-    while len(message) > 4000:
-        longest_word = max(message.split(), key=len)
-        message = message.replace(longest_word, "[...truncated...]")
+    marker = "[...truncated...]"
+    header, newline, _ = message.partition("\n")
+    protected = set(header.split()) if newline else set()
+    words = Counter(message.split())
+    length = len(message)
+    replaced = set()
+    for word in sorted(words, key=len, reverse=True):
+        if length <= 4000 or len(word) <= len(marker):
+            break
+        if word in protected:
+            continue
+        replaced.add(word)
+        length -= words[word] * (len(word) - len(marker))
 
+    message = re.sub(r'\S+', lambda match: marker if match.group() in replaced else match.group(), message)
+    if len(message) > 4000:
+        return message[:4000 - len(marker)] + marker
     return message
 
 
@@ -174,9 +224,13 @@ def send_to_slack(message):
 
     message = truncate_slack_message(message)
 
-    headers = {'Content-type': 'application/json'}
-    data = {'text': message}
-    requests.post(config.SLACK_WEBHOOK, headers=headers, data=json.dumps(data))
+    try:
+        response = requests.post(config.SLACK_WEBHOOK, json={'text': message}, timeout=config.NETWORK_TIMEOUT)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        # Exception messages can contain the secret webhook URL.
+        detail = f"HTTP {e.response.status_code}" if e.response is not None else type(e).__name__
+        print(f"Slack notification failed: {detail}", file=sys.stderr)
 
 
 def check_control_user(old_entries, new_entries):
@@ -253,10 +307,10 @@ def compare_ldap_entries(old_entries, new_entries):
                 if old_value != new_value:
                     if old_value is None:
                         # If the key is not found in old_entries, it's an addition.
-                        changes["additions"].append({key: new_value})
+                        changes["additions"].append({key: list(new_value)})
                     elif new_value is None:
                         # If the key is not found in new_entries, it's a removal.
-                        changes["removals"].append({key: old_value})
+                        changes["removals"].append({key: list(old_value)})
                     else:
                         # If the key is in both old_entries and new_entries but the values are not the same, then may be a modification.
                         # There is no way to truly determine whether an attribute's value(s) have been changed, or removed and then a new value added.
@@ -310,7 +364,7 @@ def compare_ldap_entries(old_entries, new_entries):
                                     print(f"Ignoring {change_type} of {old_entries[uuid]['dn'][0]} ({old_entries[uuid]['entryUUID'][0]}) {ignored_attr_name}: from {old_attr_value} to {new_attr_value}", file=sys.stderr)
                                     changes[change_type].remove(change) # Remove the whole dictionary from changes["modifications"].
                             else:
-                                for added_or_removed_val in change[ignored_attr_name][:]: # val1, val2, ...
+                                for added_or_removed_val in change[ignored_attr_name].copy(): # val1, val2, ...
                                     if added_or_removed_val in ignored_attr_list: # Check whether the value should be ignored.
                                         print(f"Ignoring {change_type} of {old_entries[uuid]['dn'][0]} ({old_entries[uuid]['entryUUID'][0]}) {ignored_attr_name}: {added_or_removed_val}", file=sys.stderr)
                                         change[ignored_attr_name].remove(added_or_removed_val) # Remove the ignored value from the set of added/removed attributes for attribute ignored_attr_name.
@@ -330,8 +384,8 @@ def main():
 
         try:
             retrieved_entries = retrieve_ldap()
-        except LDAPSocketOpenError as e:
-            print(f"LDAP connection error: {e}", file=sys.stderr)
+        except LDAPException as e:
+            print(f"LDAP retrieval error: {e}", file=sys.stderr)
             continue
 
         old_entries = new_entries

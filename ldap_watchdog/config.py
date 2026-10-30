@@ -28,6 +28,7 @@ LDAP_SERVER = os.getenv('LDAP_WATCHDOG_SERVER', '')
 LDAP_USERNAME = os.getenv('LDAP_WATCHDOG_USERNAME', '')
 LDAP_PASSWORD = os.getenv('LDAP_WATCHDOG_PASSWORD', '')
 LDAP_USE_SSL = _parse_bool(os.getenv('LDAP_WATCHDOG_USE_SSL', 'true'))
+LDAP_CA_CERTS_FILE = os.getenv('LDAP_WATCHDOG_CA_CERTS_FILE') or None
 BASE_DN = os.getenv('LDAP_WATCHDOG_BASE_DN', '')
 
 DISABLE_COLOR_OUTPUT = _parse_bool(os.getenv('LDAP_WATCHDOG_DISABLE_COLOR_OUTPUT', 'false'))
@@ -36,6 +37,9 @@ SEARCH_FILTER = os.getenv('LDAP_WATCHDOG_SEARCH_FILTER', '(&(|(objectClass=inetO
 SEARCH_ATTRIBUTE = _parse_list(os.getenv('LDAP_WATCHDOG_SEARCH_ATTRIBUTE', '*,+'))
 
 REFRESH_RATE = int(os.getenv('LDAP_WATCHDOG_REFRESH_RATE', '60'))
+NETWORK_TIMEOUT = int(os.getenv('LDAP_WATCHDOG_NETWORK_TIMEOUT', '30'))
+if NETWORK_TIMEOUT <= 0:
+    raise ValueError('LDAP_WATCHDOG_NETWORK_TIMEOUT must be greater than zero')
 
 SLACK_BULLETPOINT = os.getenv('LDAP_WATCHDOG_SLACK_BULLETPOINT', ' \u2022   ')
 
