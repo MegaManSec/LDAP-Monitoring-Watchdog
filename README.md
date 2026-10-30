@@ -93,7 +93,7 @@ pip install ".[slack]"
 
 ### Upgrading from 1.x
 
-Since 2.0.0, LDAPS connections verify the server certificate, which 1.0.0 did not, so set `LDAP_WATCHDOG_CA_CERTS_FILE` before upgrading if the certificate is self-signed or from a private CA. The [release notes](https://github.com/MegaManSec/LDAP-Monitoring-Watchdog/releases/tag/v2.0.0) list the other changes.
+Since 2.0.0, LDAPS connections verify the server certificate and that it matches the host name or IP address in `LDAP_WATCHDOG_SERVER`; 1.0.0 checked neither. Before upgrading, set `LDAP_WATCHDOG_CA_CERTS_FILE` if the certificate is self-signed or from a private CA, and if it does not match that name, use a matching certificate or set `LDAP_WATCHDOG_TLS_VERIFY=false` (see the TLS notes under [Configuration](#configuration)). The [release notes](https://github.com/MegaManSec/LDAP-Monitoring-Watchdog/releases/tag/v2.0.0) list the other changes.
 
 ## Usage
 
