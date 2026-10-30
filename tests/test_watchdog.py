@@ -88,6 +88,16 @@ class MessageTests(unittest.TestCase):
             'photo [...truncated...] important change',
         )
 
+    def test_truncation_keeps_the_changed_entry_in_the_header(self):
+        for op_type in ('add', 'delete'):
+            message, _ = watchdog.generate_message(DN, op_type, {
+                'member': [f'uid=user{i},ou=People,dc=example,dc=com' for i in range(100)],
+            })
+            with self.subTest(op_type=op_type):
+                header = message.partition('\n')[0]
+                self.assertIn(DN, header)
+                self.assertEqual(watchdog.truncate_slack_message(message).partition('\n')[0], header)
+
     def test_truncation_replaces_the_longest_words_first(self):
         for words, expected in (
             (['b' * 2500, 'a' * 2500, 'c' * 100], ['[...truncated...]', 'a' * 2500, 'c' * 100]),

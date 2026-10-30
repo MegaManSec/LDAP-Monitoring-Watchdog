@@ -189,12 +189,16 @@ def truncate_slack_message(message):
     - str: Truncated Slack message.
     """
     marker = "[...truncated...]"
+    header, newline, _ = message.partition("\n")
+    protected = set(header.split()) if newline else set()
     words = Counter(message.split())
     length = len(message)
     replaced = set()
     for word in sorted(words, key=len, reverse=True):
         if length <= 4000 or len(word) <= len(marker):
             break
+        if word in protected:
+            continue
         replaced.add(word)
         length -= words[word] * (len(word) - len(marker))
 
