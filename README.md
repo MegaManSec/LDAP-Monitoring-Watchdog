@@ -54,7 +54,7 @@ Note: in the below examples, changes to entryCSN and modifyTimestamp on existing
 
 
 ## Requirements
-- Python 3.7+.
+- Python 3.10+.
 - The `ldap3` package. If using a Slack webhook, the `requests` package is also required.
 
 ## Installation
