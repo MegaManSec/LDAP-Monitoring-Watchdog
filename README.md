@@ -258,4 +258,4 @@ python -m unittest discover -s tests
 `requirements.txt` pins every dependency for the Docker image and `install.sh`. After changing the dependencies in `setup.py`, regenerate it with `pip-compile --extra=slack --output-file=requirements.txt setup.py`.
 
 ## License
-This project is licensed under [GPL3.0](https://github.com/MegaManSec/LDAP-Monitoring-Watchdog/blob/main/LICENSE).
+This project is licensed under [GPL-3.0-or-later](https://github.com/MegaManSec/LDAP-Monitoring-Watchdog/blob/main/LICENSE).
