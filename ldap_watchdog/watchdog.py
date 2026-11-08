@@ -301,7 +301,7 @@ def compare_ldap_entries(old_entries, new_entries):
             # XXX: Could these be dictionaries instead?
             changes.setdefault("additions", []) # A list of addition of values to attributes.
             changes.setdefault("modifications", []) # A list of changes of a single value for an attribute.
-            changes.setdefault("removals", []) # A list of removal of values from an atttribute.
+            changes.setdefault("removals", []) # A list of removal of values from an attribute.
             for key in old_entries[uuid].keys() | new_entries[uuid].keys():
                 # Compare each key (attribute) in the old and new entries
                 old_value = old_entries[uuid].get(key)
@@ -321,7 +321,7 @@ def compare_ldap_entries(old_entries, new_entries):
                         if len(old_value) == len(new_value) == 1:
                             changes["modifications"].append({key: (old_value[0], new_value[0])})
                         else:
-                            # If there is either zero or more than one value for an attribute, then the difference beteen the old values and the new values indicate an addition or removal (or a value; not an entry).
+                            # If there is either zero or more than one value for an attribute, then the difference between the old values and the new values indicate an addition or removal (or a value; not an entry).
                             # That is to say: this is the addition or removal of values for an attribute which does not have exactly one old value and exactly one new value.
                             # Therefore, if a new value (or values) is present for an attribute, it is also an addition.
                             added = set(new_value) - set(old_value)
