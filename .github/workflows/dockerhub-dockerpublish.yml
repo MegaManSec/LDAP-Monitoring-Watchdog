@@ -9,12 +9,14 @@ permissions:
 
 env:
   REGISTRY: docker.io
-  DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_NAMESPACE }}
   IMAGE_NAME: ldap-monitor
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: dockerhub
+    env:
+      DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_NAMESPACE }}
 
     steps:
       - name: Checkout
